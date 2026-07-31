@@ -1,0 +1,58 @@
+[project]
+name = "arc-reactor-benchmark"
+version = "0.1.0"
+description = "Power balance and confinement benchmarking for ARC-class compact high-field tokamaks with a parametric efficiency study."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Emre Yilmaz" }]
+keywords = ["fusion-energy", "tokamak", "plasma-physics", "benchmark", "python"]
+dependencies = ["numpy>=2.0", "scipy>=1.14", "pandas>=2.2", "matplotlib>=3.9"]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.8", "mypy>=1.13"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "ruff>=0.8", "mypy>=1.13"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arc_benchmark"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: excluded from the default run"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/arc_benchmark"]
+
+# SciPy ships no type information. Three routines are used from it, the composite
+# Simpson rule, Brent root finding, and bounded scalar minimisation, and every
+# call site converts the result to a float immediately.
+[[tool.mypy.overrides]]
+module = ["scipy.*"]
+ignore_missing_imports = true
+
+# Matplotlib is used only inside the figures module, which returns paths rather
+# than figure objects, so no matplotlib type ever crosses a public boundary.
+[[tool.mypy.overrides]]
+module = ["matplotlib.*"]
+ignore_missing_imports = true
+
+# pandas is used only inside the tables module, which builds frames from already
+# typed dataclasses and returns them without further processing.
+[[tool.mypy.overrides]]
+module = ["pandas.*"]
+ignore_missing_imports = true
