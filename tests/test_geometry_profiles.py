@@ -83,6 +83,7 @@ def test_flat_profile_leaves_every_factor_at_exactly_one() -> None:
     assert FLAT_PROFILE.density_square_factor() == 1.0
     assert FLAT_PROFILE.synchrotron_factor() == 1.0
     assert FLAT_PROFILE.fusion_factor(14.0) == 1.0
+    assert FLAT_PROFILE.line_average_ratio() == 1.0
 
 
 @pytest.mark.parametrize(
@@ -158,6 +159,61 @@ def test_fusion_factor_exceeds_the_bremsstrahlung_factor() -> None:
     """
     shape = ProfileShape(0.4, 1.0)
     assert shape.fusion_factor(14.0) > shape.bremsstrahlung_factor()
+
+
+@pytest.mark.parametrize("density_exponent", [0.2, 0.4, 0.5, 1.0, 2.0])
+def test_line_average_ratio_matches_the_chord_integral(density_exponent: float) -> None:
+    """The closed form equals the chord average divided by the volume average.
+
+    The line average is the shape function integrated along ``d rho`` on a chord
+    through the axis; the volume average is the same function integrated against
+    ``2 rho d rho``. Computing both numerically and dividing is what checks the
+    Gamma function algebra rather than restating it.
+
+    Tolerance: the same reasoning as the closed-form factor test above. The
+    integrand has an algebraic singularity in its derivative at the edge for an
+    exponent below one, the trapezoidal rule then converges as ``h**(1 + alpha)``
+    with ``alpha`` at least 0.2 and ``h`` equal to 5e-6, which bounds the
+    relative error at 4e-7. The pin is 1e-5, an order of magnitude above that.
+    """
+    shape = ProfileShape(density_exponent, 1.0)
+    rho = np.linspace(0.0, 1.0, 200001)
+    core = np.clip(1.0 - rho**2, 0.0, 1.0) ** density_exponent
+
+    chord_average = float(np.trapezoid(core, rho))
+    volume_average = float(np.trapezoid(2.0 * rho * core, rho))
+    assert shape.line_average_ratio() == pytest.approx(
+        chord_average / volume_average, rel=1.0e-5
+    )
+
+
+def test_line_average_ratio_hits_its_two_exact_cases() -> None:
+    """Two exponents have elementary closed forms, and both are reproduced.
+
+    At ``alpha_n = 1`` the chord integral is 2/3 and the volume average is 1/2,
+    so the ratio is exactly 4/3. At ``alpha_n = 1/2`` the chord integral is the
+    area of a quarter circle, ``pi / 4``, against a volume average of 2/3, so the
+    ratio is exactly ``3 pi / 8``. Neither needs the Gamma function, which is
+    what makes them a check on the implementation that uses it.
+    """
+    assert ProfileShape(1.0, 0.0).line_average_ratio() == pytest.approx(4.0 / 3.0, rel=1.0e-14)
+    assert ProfileShape(0.5, 0.0).line_average_ratio() == pytest.approx(
+        3.0 * math.pi / 8.0, rel=1.0e-14
+    )
+
+
+def test_line_average_ratio_rises_with_density_peaking() -> None:
+    """A more peaked density puts more of itself on the chord and none elsewhere.
+
+    The temperature exponent is varied alongside to confirm it does not enter:
+    the ratio is a statement about the density profile only.
+    """
+    ratios = [ProfileShape(0.25 * k, 0.5 * k).line_average_ratio() for k in range(0, 5)]
+    assert ratios[0] == 1.0
+    assert all(later > earlier for earlier, later in itertools.pairwise(ratios))
+    assert ProfileShape(0.4, 0.0).line_average_ratio() == ProfileShape(
+        0.4, 3.0
+    ).line_average_ratio()
 
 
 def test_profile_rejects_negative_exponents() -> None:

@@ -9,6 +9,7 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from arc_benchmark.algorithm.balance import PlasmaComposition
 from arc_benchmark.algorithm.constraints import evaluate_constraints
 from arc_benchmark.algorithm.lawson import lawson_triple_product, optimum_lawson_temperature
 from arc_benchmark.algorithm.operating import solve_ignition_temperature, solve_operating_point
@@ -72,6 +73,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(
         f"  minimum requirement            {optimum.triple_product:10.4e} m^-3 keV s "
         f"at {optimum.temperature_kev:.2f} keV"
+    )
+    # The textbook case, printed beside the diluted one: no helium ash, no
+    # impurities, and classical bremsstrahlung. It is the number the standard
+    # references quote as roughly 3e21, and the difference between the two lines
+    # is what dilution and the relativistic correction cost.
+    classical = optimum_lawson_temperature(
+        PlasmaComposition(), relativistic_bremsstrahlung=False
+    )
+    print(
+        f"  minimum for a pure plasma      {classical.triple_product:10.4e} m^-3 keV s "
+        f"at {classical.temperature_kev:.2f} keV"
     )
 
     ignition_temperature = solve_ignition_temperature(case.state, IPB98Y2)

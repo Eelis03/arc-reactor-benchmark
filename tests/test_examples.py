@@ -14,6 +14,7 @@ never be caught by this tier.
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -51,6 +52,7 @@ def test_every_example_script_is_discovered() -> None:
         "efficiency_study.py",
         "field_scaling.py",
         "power_balance.py",
+        "readme_figures.py",
         "scaling_sensitivity.py",
     ]
 
@@ -138,6 +140,25 @@ def test_scaling_sensitivity_script_reports_the_amplification(
         assert name in out
 
 
+def test_readme_figure_script_reports_what_each_figure_contains(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The figure script prints the numbers its figures draw, so captions can be checked.
+
+    The fixed-density branch is matched with either sign in front of its zero.
+    The least-squares slope of a constant series is a rounding-level number whose
+    sign depends on the point count, and printing it as it comes out rather than
+    forcing it positive is the honest presentation of a fit.
+    """
+    assert _load("readme_figures.py").main(["--quick"]) == 0
+    out = capsys.readouterr().out
+    assert re.search(r"exponent [+-]0\.0000", out) is not None
+    assert "exponent +2.0000" in out
+    assert "exponent +4.0000" in out
+    for name in ("ARC", "ITER", "SPARC"):
+        assert name in out
+
+
 def test_figures_are_written_when_the_quick_flag_is_absent(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -154,3 +175,25 @@ def test_figures_are_written_when_the_quick_flag_is_absent(
     for path in tmp_path.glob("*.png"):
         assert path.stat().st_size > 1000
     assert "wrote" in capsys.readouterr().out
+
+
+def test_the_published_figures_are_regenerated_by_one_command(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The three tracked figures come from one script, and they fit the size budget.
+
+    The figures committed under ``docs/figures`` are snapshots and are never
+    compared byte for byte, because matplotlib output is not byte reproducible
+    across platforms. What is checked is that the command still produces all
+    three, that each is a real image rather than an empty file, and that they fit
+    together inside the budget the README states.
+    """
+    module = _load("readme_figures.py")
+    assert module.main(["--points", "9", "--figure-dir", str(tmp_path)]) == 0
+    written = sorted(path.name for path in tmp_path.glob("*.png"))
+    assert written == ["benchmark_diagnosis.png", "field_scaling.png", "lawson.png"]
+
+    total = sum(path.stat().st_size for path in tmp_path.glob("*.png"))
+    assert all(path.stat().st_size > 1000 for path in tmp_path.glob("*.png"))
+    assert total <= 250 * 1024
+    assert "total" in capsys.readouterr().out

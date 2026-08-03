@@ -25,6 +25,7 @@ from arc_benchmark.model.confinement import CONFINEMENT_SCALINGS, IPB98Y2
 from arc_benchmark.model.constants import ALPHA_FRACTION, NEUTRON_FRACTION
 from arc_benchmark.model.geometry import PlasmaGeometry
 from arc_benchmark.model.limits import current_at_fixed_q, cylindrical_safety_factor
+from arc_benchmark.model.profiles import ProfileShape
 from arc_benchmark.model.radiation import ImpurityRadiator
 from arc_benchmark.pipeline.machines import machine
 
@@ -75,6 +76,47 @@ def test_the_confinement_time_is_the_scaling_evaluated_at_the_solved_loss_power(
     )
     assert point.confinement_time_s == pytest.approx(predicted, rel=1.0e-13)
     assert point.transport_power_mw == pytest.approx(point.loss_power_mw, rel=1.0e-13)
+
+
+def test_a_flat_density_makes_the_two_averages_identical() -> None:
+    """The zero-dimensional default hands the scaling the density it carries.
+
+    This is the property that keeps the line-average correction from touching any
+    flat-profile result: the ratio is exactly one, so the correction is a
+    multiplication by one and not an approximation applied everywhere.
+    """
+    assert _ARC.profile.is_flat
+    assert _ARC.line_averaged_density == _ARC.electron_density
+    assert _ARC.confinement_inputs(100.0).line_averaged_density_e19 == (
+        _ARC.electron_density / 1.0e19
+    )
+
+
+def test_a_peaked_density_reaches_the_scaling_as_a_line_average() -> None:
+    """The scaling is fed the chord average, which is what it was fitted against.
+
+    The confinement scalings are regressions against an interferometer
+    measurement, and a volume-averaged model owes them the conversion. The check
+    is made twice: once on the input handed over, and once on the confinement
+    time itself, which must move by the density exponent of the scaling and by
+    nothing else, since only the density changed.
+    """
+    peaked = _with(profile=ProfileShape(0.4, 1.0))
+    ratio = peaked.profile.line_average_ratio()
+    assert ratio > 1.0
+
+    assert peaked.line_averaged_density == pytest.approx(
+        ratio * peaked.electron_density, rel=1.0e-15
+    )
+    assert peaked.confinement_inputs(100.0).line_averaged_density_e19 == pytest.approx(
+        ratio * peaked.electron_density / 1.0e19, rel=1.0e-15
+    )
+
+    flat_tau = IPB98Y2.tau_e(_ARC.confinement_inputs(100.0))
+    peaked_tau = IPB98Y2.tau_e(peaked.confinement_inputs(100.0))
+    assert peaked_tau / flat_tau == pytest.approx(
+        ratio**IPB98Y2.exponents.density, rel=1.0e-13
+    )
 
 
 def test_alpha_and_neutron_powers_partition_the_fusion_power() -> None:

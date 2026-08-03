@@ -191,6 +191,19 @@ class PlasmaState:
         return self.composition.fuel_fraction * self.electron_density
 
     @property
+    def line_averaged_density(self) -> float:
+        """Line-averaged electron density in inverse cubic metre.
+
+        The confinement scalings, the Greenwald limit, and the L to H power
+        threshold are all published against the density measured along an
+        interferometer chord, while this state carries a volume average. For the
+        parabolic profile family the ratio between the two is closed form, so it
+        is applied rather than assumed to be one. A flat density makes it exactly
+        one, which is why the zero-dimensional default is untouched by this.
+        """
+        return self.electron_density * self.profile.line_average_ratio()
+
+    @property
     def thermal_pressure_pa(self) -> float:
         """Volume-averaged thermal pressure in pascal.
 
@@ -214,15 +227,14 @@ class PlasmaState:
     def confinement_inputs(self, loss_power_mw: float) -> ConfinementInputs:
         """Assemble the inputs a confinement scaling needs, at a given loss power.
 
-        The line-averaged density the scalings were fitted against is taken equal
-        to the volume-averaged density. For a peaked profile the line average is
-        higher, so this is a conservative choice, and it is stated in the design
-        notes rather than corrected with a factor this model cannot justify.
+        The density handed over is :attr:`line_averaged_density`, which is what
+        every scaling in this package was fitted against, and not the volume
+        average. The two are equal only for a flat density.
         """
         return ConfinementInputs(
             plasma_current_ma=self.plasma_current_ma,
             toroidal_field=self.toroidal_field,
-            line_averaged_density_e19=self.electron_density / 1.0e19,
+            line_averaged_density_e19=self.line_averaged_density / 1.0e19,
             loss_power_mw=loss_power_mw,
             major_radius=self.geometry.major_radius,
             inverse_aspect_ratio=self.geometry.inverse_aspect_ratio,

@@ -168,6 +168,19 @@ def sweep_lines(trace: SweepTrace, stride: int = 1) -> list[str]:
     summary = ", ".join(f"{name} at {count} points" for name, count in counts.items())
     lines.append(f"binding constraint across the sweep: {summary}")
 
+    # The lowest and the highest feasible value, said in those words rather than
+    # as a band, because nothing here guarantees that the feasible points are
+    # contiguous and a report should not imply that they are.
+    feasible = trace.feasible_points
+    if feasible:
+        lines.append(
+            f"feasible at {len(feasible)} of {len(trace.points)} points, lowest "
+            f"{feasible[0].value:.4g} {trace.units}, highest {feasible[-1].value:.4g} "
+            f"{trace.units}"
+        )
+    else:
+        lines.append("no point in the sweep satisfies every constraint")
+
     first_bad = trace.first_infeasible()
     if first_bad is None:
         lines.append("every point in the sweep satisfies every constraint")

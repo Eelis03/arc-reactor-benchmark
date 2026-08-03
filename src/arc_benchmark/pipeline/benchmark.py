@@ -193,7 +193,9 @@ def run_benchmark_case(
     plant = evaluate_plant_for_point(point, case)
 
     density_limit = greenwald_density(state.plasma_current_ma, state.geometry.minor_radius)
-    greenwald_fraction = state.electron_density / density_limit
+    # The sources quote the Greenwald fraction against the line-averaged density,
+    # so the comparison is made against the same average.
+    greenwald_fraction = state.line_averaged_density / density_limit
     beta_n = report.named("troyon").value
     bootstrap = report.named("bootstrap").value
 

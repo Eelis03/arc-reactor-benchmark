@@ -29,8 +29,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Run tests
-        run: uv run pytest -q
+      # The floor is the measured coverage, 95 percent, rounded down and reduced
+      # by two, so that a small platform difference in which lines run cannot
+      # fail the build while a real drop in coverage still does.
+      - name: Run tests with coverage
+        run: >
+          uv run pytest -q
+          --cov=src/arc_benchmark
+          --cov-report=term-missing
+          --cov-fail-under=93
 
       - name: Lint
         run: uv run ruff check .

@@ -16,6 +16,13 @@ with ``rho`` the normalised minor radius. For the elliptical cross-section used
 throughout, the volume element is proportional to ``rho d rho``, so the volume
 average of ``(1 - rho**2)**alpha`` is ``1 / (1 + alpha)``.
 
+One factor here is not a volume integral at all.
+:meth:`ProfileShape.line_average_ratio` converts the volume-averaged density
+this model carries into the line-averaged density that the confinement scalings,
+the Greenwald limit, and the L to H threshold are all published against. It is a
+ratio of two integrals of the same shape function over different measures, so it
+is the same kind of pure number and is applied in the same way.
+
 Setting both exponents to zero recovers flat profiles and every factor here
 becomes exactly one, which is how the rest of the package stays honest about
 what a genuinely zero-dimensional answer looks like.
@@ -120,6 +127,43 @@ class ProfileShape:
         """
         exponent = 2.0 * self.density_exponent + 0.5 * self.temperature_exponent
         return self.density_peaking**2 * math.sqrt(self.temperature_peaking) / (1.0 + exponent)
+
+    def line_average_ratio(self) -> float:
+        """``n_line / <n>``, the line average over the volume average, in closed form.
+
+        Every confinement scaling in this package, the Greenwald limit, and the
+        L to H power threshold are published against the density an
+        interferometer measures along a chord, not against the volume average a
+        zero-dimensional model carries. For the parabolic family both averages
+        are integrals of the same shape function, along ``d rho`` on the chord
+        and against ``2 rho d rho`` over the volume, so their ratio is a pure
+        number that depends only on ``alpha_n``:
+
+            n_line / <n> = (1 + alpha_n) sqrt(pi) Gamma(1 + alpha_n)
+                           / (2 Gamma(alpha_n + 3/2))
+
+        from the Beta function identity
+        ``int_0^1 (1 - x**2)**alpha dx = sqrt(pi) Gamma(1 + alpha) / (2 Gamma(alpha + 3/2))``.
+        It is 1.0 for a flat density, 1.1447 at ``alpha_n = 0.4``, and 1.1781 at
+        ``alpha_n = 0.5``.
+
+        The chord is taken to pass through the magnetic axis of nested elliptical
+        flux surfaces of constant elongation, which makes the chord coordinate
+        proportional to ``rho`` whether the chord is vertical or on the midplane.
+        A Shafranov-shifted equilibrium, or a tangential chord, would break that
+        proportionality and is not modelled.
+
+        Returns:
+            The ratio, at least one, and exactly one for a flat density.
+        """
+        if self.density_exponent == 0.0:
+            return 1.0
+        return float(
+            self.density_peaking
+            * math.sqrt(math.pi)
+            * math.gamma(1.0 + self.density_exponent)
+            / (2.0 * math.gamma(self.density_exponent + 1.5))
+        )
 
     def fusion_factor(self, mean_temperature_kev: float) -> float:
         """``<n**2 sigma_v(T)> / (<n>**2 sigma_v(<T>))``, by quadrature.

@@ -10,4 +10,9 @@ build/
 *.egg-info/
 outputs/
 .DS_Store
-figures/
+.coverage
+htmlcov/
+# The default figure directory the examples write to, at the repository root
+# only. The leading slash matters: without it this pattern would also swallow
+# docs/figures, which is tracked on purpose.
+/figures/

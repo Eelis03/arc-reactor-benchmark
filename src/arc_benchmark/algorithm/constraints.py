@@ -183,6 +183,10 @@ def evaluate_constraints(
     state = point.state
     geometry = state.geometry
 
+    # Greenwald and the Martin L to H threshold are both published against the
+    # line-averaged density, so both are evaluated at
+    # :attr:`~arc_benchmark.algorithm.balance.PlasmaState.line_averaged_density`
+    # rather than at the volume average. They differ only for a peaked profile.
     density_limit = greenwald_density(state.plasma_current_ma, geometry.minor_radius)
     beta_t = toroidal_beta(state.thermal_pressure_pa, state.toroidal_field)
     beta_n = normalised_beta(
@@ -197,7 +201,7 @@ def evaluate_constraints(
         ConstraintCheck(
             name="greenwald",
             quantity="line-averaged electron density",
-            value=state.electron_density,
+            value=state.line_averaged_density,
             limit=thresholds.greenwald_fraction * density_limit,
             sense=ConstraintSense.UPPER,
             units="m^-3",
@@ -239,7 +243,7 @@ def evaluate_constraints(
                 quantity="power crossing the separatrix",
                 value=point.loss_power_mw,
                 limit=lh_threshold_power(
-                    state.electron_density, state.toroidal_field, geometry.surface_area
+                    state.line_averaged_density, state.toroidal_field, geometry.surface_area
                 ),
                 sense=ConstraintSense.LOWER,
                 units="MW",

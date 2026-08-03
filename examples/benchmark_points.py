@@ -64,6 +64,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"stored energy {peaked.stored_energy_factor():.3f}, "
         f"bremsstrahlung {peaked.bremsstrahlung_factor():.3f}"
     )
+    line_ratio = peaked.line_average_ratio()
+    print(
+        f"  line-averaged over volume-averaged density {line_ratio:.4f}, which raises the "
+        f"{IPB98Y2.name} confinement time by "
+        f"{line_ratio ** IPB98Y2.exponents.density - 1.0:+.2%} at a fixed loss power"
+    )
     peaked_trace = run_benchmark(IPB98Y2, profile=peaked)
     for line in benchmark_lines(peaked_trace):
         print(line)

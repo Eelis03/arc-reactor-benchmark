@@ -71,7 +71,15 @@ def _rebuilt_state(
     if invariant is SweepInvariant.FIXED_DENSITY:
         density = base.electron_density
     elif invariant is SweepInvariant.FIXED_GREENWALD_FRACTION:
-        density = base_greenwald_fraction * greenwald_density(current, geometry.minor_radius)
+        # The Greenwald fraction is defined on the line-averaged density, so the
+        # target line average is converted back to the volume average this state
+        # carries. The ratio is one for a flat density, which every sweep in this
+        # package uses, and the division is here so that a peaked sweep would
+        # hold the fraction the limit is actually written in.
+        line_averaged = base_greenwald_fraction * greenwald_density(
+            current, geometry.minor_radius
+        )
+        density = line_averaged / base.profile.line_average_ratio()
     else:
         # Toroidal beta is proportional to n T / B**2, and the temperature is not
         # swept, so holding beta means the density follows the square of the field.
@@ -133,7 +141,7 @@ def field_sweep(
         The sweep trace, in the order the fields were given.
     """
     base_q = cylindrical_safety_factor(base.geometry, base.toroidal_field, base.plasma_current_ma)
-    base_fraction = base.electron_density / greenwald_density(
+    base_fraction = base.line_averaged_density / greenwald_density(
         base.plasma_current_ma, base.geometry.minor_radius
     )
     points = tuple(
@@ -187,7 +195,7 @@ def radius_sweep(
         The sweep trace.
     """
     base_q = cylindrical_safety_factor(base.geometry, base.toroidal_field, base.plasma_current_ma)
-    base_fraction = base.electron_density / greenwald_density(
+    base_fraction = base.line_averaged_density / greenwald_density(
         base.plasma_current_ma, base.geometry.minor_radius
     )
     epsilon = base.geometry.inverse_aspect_ratio

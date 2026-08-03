@@ -29,6 +29,7 @@ from arc_benchmark.analysis.report import (
 from arc_benchmark.analysis.tables import benchmark_frame, constraint_frame, sweep_frame
 from arc_benchmark.model.confinement import IPB98Y2, ITER89P
 from arc_benchmark.model.limits import greenwald_density
+from arc_benchmark.model.profiles import ProfileShape
 from arc_benchmark.pipeline.benchmark import run_benchmark, run_benchmark_case
 from arc_benchmark.pipeline.machines import MACHINES, machine
 from arc_benchmark.pipeline.sweep import (
@@ -54,6 +55,29 @@ def test_a_point_above_the_greenwald_limit_is_flagged() -> None:
     assert greenwald.utilisation == pytest.approx(1.2, rel=1.0e-12)
     assert greenwald.margin < 0.0
     assert "greenwald" in {check.name for check in report.violations}
+
+
+def test_the_density_limits_are_judged_on_the_line_average() -> None:
+    """Greenwald and the L to H threshold are both published in line-averaged density.
+
+    Peaking the density at a fixed volume average raises the line average by the
+    profile's own ratio and changes nothing else, so both checks must move by
+    exactly that ratio raised to their own exponent: one for the Greenwald
+    fraction, and 0.717 for the Martin threshold. Anything else would mean one of
+    them is still reading the volume average.
+    """
+    flat = evaluate_constraints(solve_operating_point(_ARC.state, IPB98Y2))
+    peaked_state = dataclasses.replace(_ARC.state, profile=ProfileShape(0.4, 0.0))
+    peaked = evaluate_constraints(solve_operating_point(peaked_state, IPB98Y2))
+    ratio = peaked_state.profile.line_average_ratio()
+
+    assert peaked.named("greenwald").value == pytest.approx(
+        ratio * flat.named("greenwald").value, rel=1.0e-14
+    )
+    assert peaked.named("greenwald").limit == flat.named("greenwald").limit
+    assert peaked.named("lh_threshold").limit == pytest.approx(
+        ratio**0.717 * flat.named("lh_threshold").limit, rel=1.0e-13
+    )
 
 
 def test_a_point_below_the_safety_factor_limit_is_flagged() -> None:
@@ -231,8 +255,6 @@ def test_implied_confinement_multiplier_is_reported_for_every_machine() -> None:
 
 def test_a_peaked_profile_raises_the_computed_fusion_power() -> None:
     """The profile override reaches the solve and changes the answer in the right direction."""
-    from arc_benchmark.model.profiles import ProfileShape
-
     flat = run_benchmark_case(_ARC, IPB98Y2)
     peaked = run_benchmark_case(_ARC, IPB98Y2, profile=ProfileShape(0.4, 1.0))
     assert peaked.point.terms.fusion_power_mw > flat.point.terms.fusion_power_mw
@@ -254,6 +276,30 @@ def test_power_law_fit_rejects_input_it_cannot_take_the_logarithm_of() -> None:
         fit_power_law([1.0], [1.0])
     with pytest.raises(ValueError, match="same shape"):
         fit_power_law([1.0, 2.0], [1.0])
+
+
+def test_a_sweep_report_states_how_many_points_are_feasible() -> None:
+    """The report counts the feasible points and names the extremes of the range.
+
+    The count and the two values are what the results section quotes, so they are
+    read out of the report rather than recomputed in the document. A sweep with
+    nothing feasible says so instead of naming a range it does not have.
+    """
+    case = machine("ARC")
+    trace = field_sweep(
+        case.state, np.linspace(4.0, 14.0, 41), scaling=IPB98Y2, plant=case.plant
+    )
+    expected = len(trace.feasible_points)
+    assert any(
+        f"feasible at {expected} of 41 points" in line for line in sweep_lines(trace)
+    )
+
+    hopeless = density_sweep(case.state, np.linspace(4.0e20, 6.0e20, 5), IPB98Y2)
+    assert not hopeless.feasible_points
+    assert any(
+        "no point in the sweep satisfies every constraint" in line
+        for line in sweep_lines(hopeless)
+    )
 
 
 def test_reports_render_without_raising_and_mention_the_verdict() -> None:

@@ -168,6 +168,53 @@ The results show why a single shape cannot be adopted as a default. One shape
 that brings ARC to within 12 percent of its published fusion power takes ITER to
 54 percent above its own. Profile shape is a per-machine input.
 
+### The line-averaged density, a limitation that was closed
+
+An earlier version of these notes recorded, under "Known limitations", that the
+confinement scalings are fitted against a line-averaged density while this model
+supplies a volume average, and that the substitution was left uncorrected because
+a correction would need the profile the model does not have. That entry has been
+removed, because the correction turned out not to need a profile solution at all:
+it needs only the profile shape that the caller already supplies, and for the
+parabolic family it is closed form.
+
+Both averages are integrals of the same shape function. The line average is taken
+along a chord through the magnetic axis, against `d rho`; the volume average is
+taken against `2 rho d rho`. Their ratio follows from the Beta function identity
+`int_0^1 (1 - x**2)**a dx = sqrt(pi) Gamma(1 + a) / (2 Gamma(a + 3/2))`:
+
+```
+n_line / <n> = (1 + alpha_n) sqrt(pi) Gamma(1 + alpha_n) / (2 Gamma(alpha_n + 3/2))
+```
+
+It is exactly one for a flat density, exactly `3 pi / 8` at `alpha_n = 1/2`, and
+exactly `4/3` at `alpha_n = 1`. The last two need no Gamma function and are what
+the tests check the implementation against.
+
+It is applied in the three places where a published correlation is written in
+line-averaged density and nowhere else: the confinement scaling inputs, the
+Greenwald limit, and the Martin L to H power threshold. At the parabolic shape
+used in the results, `alpha_n = 0.4`, the ratio is 1.1446, which raises the
+IPB98(y,2) confinement time by 5.69 percent at a fixed loss power, raises the
+reported Greenwald fraction by the ratio itself, and raises the L to H threshold
+by the ratio to the power 0.717.
+
+What it cost. Three quantities that were previously independent of profile shape
+now depend on it, which is a real loss: a reader can no longer read the Greenwald
+fraction of a peaked case without knowing the shape that produced it. The peaked
+ITER case now reports a Greenwald fraction of 0.959 where it reported 0.838
+before, which is materially closer to a violation, and that move is a consequence
+of the correction rather than of anything about ITER. The correction also assumes a chord through the
+magnetic axis and nested flux surfaces of constant elongation, so a Shafranov
+shifted equilibrium or a tangential chord is outside it.
+
+What it did not cost. The default is flat, the ratio is then exactly one, and
+every flat-profile number in the results is bit for bit what it was. This is a
+correction that appears only when a caller has already accepted a profile shape.
+
+What remains. The shape itself is still an input this model cannot determine, and
+that is the separate "No profiles" limitation below, which stands.
+
 ### An implied confinement enhancement, to separate two failures
 
 The fusion gain discrepancy conflates a fusion power disagreement with a
@@ -364,15 +411,6 @@ For the reasons given above. It is the largest radiated term at every high-field
 point, it decides the sign of the net electrical output at the ARC design point,
 and it rests on an asymptotic formula known to overestimate. The reflectivity
 sensitivity is reported so that a reader can bound the consequence.
-
-### Line-averaged and volume-averaged density are treated as equal
-
-The confinement scalings are fitted against line-averaged density, and this model
-supplies the volume average. For a peaked profile the line average is higher, by
-roughly 10 to 15 percent for the shapes considered here, which would raise the
-IPB98(y,2) confinement time by 4 to 6 percent. The substitution is conservative in
-that direction and is not corrected, because a correction would need the profile
-the model does not have.
 
 ### Fast alpha pressure is not carried
 

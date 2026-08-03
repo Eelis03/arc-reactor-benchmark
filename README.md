@@ -6,142 +6,41 @@ Power balance and confinement benchmarking for ARC-class compact high-field toka
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-## Overview
+![Fusion power against toroidal field on three branches, with measured exponents 0, 2 and 4, and a feasible band on each that is bounded below by the Troyon beta limit and above by the L to H power threshold](docs/figures/field_scaling.png)
 
-ARC here means the Affordable, Robust, Compact tokamak of Sorbom and colleagues,
-published in Fusion Engineering and Design in 2015: a peer-reviewed engineering
-design for a compact high-field fusion pilot plant with demountable rare earth
-barium copper oxide toroidal field magnets and a molten salt liquid immersion
-blanket. It is not the fictional device of a similar nickname, and nothing in
-this repository has any relationship to that.
+That figure is the compact high-field argument stated as a number. The three
+curves are the same device swept over the same field with the same solver, and
+they differ only in what is declared fixed while the field rises. That single
+choice moves the measured exponent of fusion power in field from 0 to 2 to 4. The
+lower panel is the part the exponent alone does not tell you: every branch is
+feasible only over a band. The two shallower ones are blocked below by the Troyon
+beta limit and above by the power a plasma needs just to reach H-mode, and the
+steepest one runs nearly the whole sweep before the Greenwald density limit stops
+it at 14 T.
+
+**ARC here means the Affordable, Robust, Compact tokamak** of Sorbom and
+colleagues, published in Fusion Engineering and Design in 2015: a peer-reviewed
+engineering design for a compact high-field fusion pilot plant with demountable
+rare earth barium copper oxide toroidal field magnets and a molten salt liquid
+immersion blanket. It is not the fictional device of a similar nickname, and
+nothing in this repository has any relationship to that.
 
 This package solves a zero-dimensional deuterium tritium power balance, evaluates
 the operational limits a design point has to respect, converts the result into
 net electrical output, and compares all of it against three published design
-points: ARC, ITER, and SPARC. It is written for someone who wants to know how far
-a compact high-field concept can be pushed before something binds, and which
-number in the projection is carrying the most uncertainty.
+points: ARC, ITER, and SPARC.
 
-## Problem
+## The benchmark, including the parts that do not flatter it
 
-A fusion power plant projection is a chain of multiplications, and the answer at
-the end of it is far more sensitive to the inputs than the inputs are to each
-other. The energy confinement time comes from an empirical scaling fitted to
-existing machines and extrapolated well outside them. That confinement time sets
-the loss power, the loss power sets the required auxiliary heating, and the
-auxiliary heating is drawn from the grid at less than sixty percent efficiency.
+From `uv run python examples/benchmark_points.py`, with flat profiles, the
+IPB98(y,2) scaling, the separatrix loss power convention, and a first wall
+reflectivity of 0.9. The published values are design targets from the cited
+papers, not measurements: none of the three machines has operated at these
+points.
 
-The amplification is measurable and it is large. At a solved steady state the
-loss power goes as the stored energy raised to `1 / (1 - alpha_P)`, with
-`alpha_P` the power degradation exponent of the confinement scaling. For
-IPB98(y,2) that exponent is 0.69, so the amplification factor is 3.23: a ten
-percent error in the assumed confinement enhancement moves the loss power by
-roughly a third, and moves the fusion gain by more. A projection that reports a
-gain without reporting what it assumed about confinement, and how sensitive the
-answer is to that assumption, is reporting the assumption rather than a result.
-
-The second problem is that a plasma result is not a plant result. A device can
-reach a respectable fusion gain and still consume more electricity than it
-produces, because the auxiliary heating that holds the plasma is bought at the
-wall plug and sold back at the thermal conversion efficiency. This package
-computes both, and reports the case where they disagree.
-
-## Approach
-
-The plasma is described by one volume-averaged density, one volume-averaged
-temperature, a composition, and a shape. Fusion power uses the Bosch and Hale
-(1992) Maxwellian reactivity fit for T(d,n)4He. Losses are bremsstrahlung with
-the relativistic and electron-electron correction of Rider (1995), synchrotron
-radiation as the Larmor emission multiplied by a Trubnikov escape factor,
-impurity line radiation from caller-supplied coronal loss parameters, and
-transport through the energy confinement time.
-
-The confinement time comes from a scaling law reached through a Protocol, so the
-solver never names a particular fit. Three are provided: IPB98(y,2) from the ITER
-Physics Basis, the ITER89-P L-mode scaling of Yushmanov and colleagues, and the
-constant-beta H-mode fit of Petty (2008). Every conclusion in the results section
-is reported against all three.
-
-Restricting the Protocol to scalings that are power laws in the loss power buys
-something specific. The steady-state balance then reduces to
-`P_loss = (W / tau_1)**(1 / (1 - alpha_P))` and is solved in closed form, with no
-iteration, no tolerance, and no convergence test. The only iterative solves in
-the package are a bracketed root find for an ignition temperature and a bounded
-minimisation for the Lawson optimum, and both verify convergence before
-returning.
-
-Four operational limits are evaluated as constraints rather than as commentary:
-the Greenwald density limit, the Troyon beta limit, the safety factor at the 95
-percent flux surface, and a bootstrap current fraction estimate. A fifth, the L to
-H transition power threshold of Martin and colleagues (2008), is applied whenever
-an H-mode scaling is used, because an H-mode confinement time is not available to
-a plasma that cannot reach H-mode. A design point that violates any of them is
-reported as violating it. The alternatives that were considered and rejected are
-recorded in [docs/design-notes.md](docs/design-notes.md).
-
-## Installation
-
-Requires Python 3.12 or later.
-
-```bash
-git clone https://github.com/Eelis03/arc-reactor-benchmark.git
-cd arc-reactor-benchmark
-uv sync
-```
-
-Using pip instead of uv:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-```
-
-## Usage
-
-```python
-from arc_benchmark import IPB98Y2, evaluate_constraints, machine, solve_operating_point
-
-case = machine("ARC")
-point = solve_operating_point(case.state, IPB98Y2)
-report = evaluate_constraints(point)
-
-print(f"fusion power   {point.terms.fusion_power_mw:.1f} MW")
-print(f"auxiliary      {point.auxiliary_power_mw:.1f} MW")
-print(f"fusion gain Q  {point.fusion_gain:.2f}")
-print(f"binding limit  {report.binding.name} at {report.binding.utilisation:.3f}")
-```
-
-Swapping `IPB98Y2` for `PETTY08` or `ITER89P` is the only change needed to see the
-same design point under a different confinement scaling, and swapping `"ARC"` for
-`"ITER"` or `"SPARC"` is the only change needed to move to another machine.
-
-Runnable examples live in `examples/`:
-
-```bash
-uv run python examples/power_balance.py
-uv run python examples/benchmark_points.py
-uv run python examples/field_scaling.py
-uv run python examples/efficiency_study.py
-uv run python examples/scaling_sensitivity.py
-```
-
-Each accepts `--quick` for a short run without figures, and the sweep scripts
-accept `--points` to change the resolution.
-
-## Results
-
-Every number below is the output of the command named above it. The default
-configuration throughout is flat profiles, the IPB98(y,2) scaling, the separatrix
-loss power convention, and a first wall reflectivity of 0.9. Flat profiles are
-the honest zero-dimensional answer, and the size of what they leave out is
-reported separately rather than absorbed into a fitted factor.
-
-### Benchmark against published design points
-
-From `uv run python examples/benchmark_points.py`. The published values are design
-targets from the cited papers, not measurements: none of the three machines has
-operated at these points.
+The two worst rows are the ones worth reading first. This model puts the ARC
+fusion gain at 3.16 against a published 13.6, and its net electrical output at
+-6.9 MWe against a published 190.
 
 | Machine | Quantity | Computed | Published | Error |
 | --- | --- | --- | --- | --- |
@@ -178,15 +77,11 @@ and is 49 percent high for ITER, which is what a single coefficient of 0.7 in
 `f_BS = c sqrt(eps) beta_p` does when applied across a factor of seven in
 poloidal beta.
 
-The fusion power is 32 to 53 percent low everywhere, and that is the flat profile
-assumption doing exactly what it should: `<n**2 sigma_v(T)>` exceeds
-`<n>**2 sigma_v(<T>)` for any peaked profile, and this model evaluates the second.
-
-The fusion gain is 63 to 83 percent low, a larger error than the fusion power
-alone accounts for. The reason is the amplification described in the problem
-statement: the auxiliary power is the difference between the transport loss and
-the alpha heating, so an error in the alpha heating and an error in the loss power
-both land on it, and the loss power carries the exponent 3.23.
+The fusion power is 32 to 53 percent low everywhere, and the fusion gain is 63 to
+83 percent low, a larger error than the fusion power alone accounts for. The
+auxiliary power is the difference between the transport loss and the alpha
+heating, so an error in either lands on it, and the transport loss carries the
+amplification exponent of 3.226 that the sensitivity section measures.
 
 SPARC as published is reported as violating a constraint. Its solved loss power
 of 31.8 MW sits below the 40.7 MW L to H access threshold, a shortfall of a
@@ -194,12 +89,19 @@ factor of 1.28, so the H-mode confinement time it was solved with is not
 available to it under this model's own rules. That is recorded as a violation
 rather than a footnote, and it is pinned as such in the regression tests.
 
-### The implied confinement enhancement, which separates the two failures
+## The diagnosis, which is what makes those numbers useful
 
-The fusion gain conflates a fusion power disagreement with a confinement
-disagreement. Taking the published fusion power and the published auxiliary power
-as given, and asking what H factor this model would need to reproduce them,
-separates the two.
+![Computed and published fusion power for ARC, ITER and SPARC beside the confinement enhancement each published design point implies, which agrees with the value its source assumes to within 13 percent](docs/figures/benchmark_diagnosis.png)
+
+A benchmark that reports a gain 77 percent low and stops there is a table. The
+fusion gain conflates two different failures, and separating them is what turns
+the discrepancy into information.
+
+Take the published fusion power and the published auxiliary power as given, let
+this model supply the stored energy and the radiated power, and ask what
+confinement enhancement the scaling would need in order to reproduce that
+operating point. That number is directly comparable with the H factor each source
+assumes.
 
 | Machine | H factor assumed by the source | H factor implied by the published point | Ratio |
 | --- | --- | --- | --- |
@@ -207,23 +109,25 @@ separates the two.
 | ITER | 1.000 | 1.027 | 1.027 |
 | SPARC | 1.000 | 1.132 | 1.132 |
 
-The confinement model agrees with all three sources to within 13 percent, and
-with ITER to 2.7 percent. ITER is the point IPB98(y,2) was constructed to project,
-so that agreement is the check that the scaling is transcribed correctly rather
-than a claim about the model. Evaluated directly at the ITER reference parameters
-with a loss power of 87 MW, IPB98(y,2) here returns 3.59 s against the published
-3.7 s, a difference of 2.9 percent; the published loss power is quoted between 80
-and 90 MW across sources, which alone moves the result from 3.81 s to 3.51 s.
+The confinement model therefore agrees with all three sources to within 13
+percent, and with ITER to 2.7 percent. ITER is the point IPB98(y,2) was
+constructed to project, so that agreement is a check that the scaling is
+transcribed correctly rather than a claim about the model. Evaluated directly at
+the ITER reference parameters at a loss power of 87 MW, this implementation
+returns 3.59 s against the published 3.7 s, a difference of 2.9 percent, and the
+published loss power is quoted between 80 and 90 MW across sources, which alone
+moves the result from 3.81 s to 3.51 s. That is asserted in
+`tests/test_confinement.py` rather than only stated here.
 
-The conclusion is that the gain discrepancies are a fusion power problem, not a
-confinement problem. That is worth knowing, because the fusion power problem has a
-known cause and the confinement one would not have.
+So the confinement model is not what is wrong. The gap is a fusion power problem,
+and the fusion power problem has a known cause: `<n**2 sigma_v(T)>` exceeds
+`<n>**2 sigma_v(<T>)` for any peaked profile, and a zero-dimensional model
+evaluates the second. That is worth knowing precisely because it points at
+something. A confinement disagreement of the same size would not.
 
-### What profiles are worth, and why one shape does not serve three machines
-
-The same benchmark with parabolic profiles at a density exponent of 0.4 and a
-temperature exponent of 1.0, which enhances fusion power by 1.65 and stored energy
-by 1.17 at 14 keV:
+The size of the profile effect is measured rather than argued about. A parabolic
+shape with a density exponent of 0.4 and a temperature exponent of 1.0 enhances
+fusion power by 1.654 and stored energy by 1.167 at 14 keV:
 
 | Machine | Flat, MW | Peaked, MW | Published, MW |
 | --- | --- | --- | --- |
@@ -231,19 +135,103 @@ by 1.17 at 14 keV:
 | ITER | 335.6 | 771.8 | 500.0 |
 | SPARC | 66.4 | 176.1 | 140.0 |
 
-One profile shape moves ARC from 32 percent low to 12 percent high, ITER from 33
-percent low to 54 percent high, and SPARC from 53 percent low to 26 percent high.
-ARC's normalised beta improves from 13 percent low to 1.4 percent high in the same
+One shape moves ARC from 32 percent low to 12 percent high, ITER from 33 percent
+low to 54 percent high, and SPARC from 53 percent low to 26 percent high. ARC's
+normalised beta improves from 13 percent low to 1.4 percent high in the same
 step. The shape that suits one machine overshoots another, which is the direct
 statement that profile shape is a per-machine input and not a universal
-correction. Choosing a shape per machine to match the published fusion power would
-turn the benchmark into a fit, so the flat case is what the primary table reports.
+correction. Choosing a shape per machine to reproduce the published fusion power
+would turn a benchmark into a fit, so the flat case is what the primary table
+reports and the peaked case is reported beside it.
+
+Supplying a profile shape also fixes something that used to be left uncorrected.
+The confinement scalings, the Greenwald limit, and the L to H power threshold are
+all published against a line-averaged density, while a volume-averaged model
+carries the volume average. For the parabolic family the ratio between the two is
+closed form, and at a density exponent of 0.4 it is 1.1446, which raises the
+IPB98(y,2) confinement time by 5.69 percent at a fixed loss power. That
+correction is now applied wherever a published correlation is written in
+line-averaged density. It is exactly one for a flat density, so no number in the
+primary table moved. What was closed, what it cost, and what remains open is
+recorded in [docs/design-notes.md](docs/design-notes.md).
+
+## Installation
+
+Requires Python 3.12 or later.
+
+```bash
+git clone https://github.com/Eelis03/arc-reactor-benchmark.git
+cd arc-reactor-benchmark
+uv sync
+```
+
+Using pip instead of uv:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+## Running it
+
+```python
+from arc_benchmark import IPB98Y2, evaluate_constraints, machine, solve_operating_point
+
+case = machine("ARC")
+point = solve_operating_point(case.state, IPB98Y2)
+report = evaluate_constraints(point)
+
+print(f"fusion power   {point.terms.fusion_power_mw:.1f} MW")
+print(f"auxiliary      {point.auxiliary_power_mw:.1f} MW")
+print(f"fusion gain Q  {point.fusion_gain:.2f}")
+print(f"binding limit  {report.binding.name} at {report.binding.utilisation:.3f}")
+```
+
+Swapping `IPB98Y2` for `PETTY08` or `ITER89P` is the only change needed to see the
+same design point under a different confinement scaling, and swapping `"ARC"` for
+`"ITER"` or `"SPARC"` is the only change needed to move to another machine.
+
+Every measured number in this README is printed by one of these commands, or by
+the test and coverage commands in the section on checking. Nothing is transcribed
+from anywhere else:
+
+```bash
+uv run python examples/power_balance.py        # one design point, audited term by term
+uv run python examples/benchmark_points.py     # the comparison against published values
+uv run python examples/field_scaling.py        # field and size sweeps, with fitted exponents
+uv run python examples/efficiency_study.py     # recirculating power and net electricity
+uv run python examples/scaling_sensitivity.py  # the same point under three scalings
+uv run python examples/readme_figures.py       # the three figures in this README
+```
+
+Each accepts `--quick` for a short run without figures, and the sweep scripts
+accept `--points` to change the resolution. The examples are wiring only: the
+dependency direction inside the package runs one way, from `model`, which knows
+about nothing else, through `algorithm` and `pipeline` to `analysis`, and the
+example scripts contain no physics of their own.
+
+The three figures in this README are snapshots. The last command in that list is
+the one that regenerates all of them: it writes them into `docs/figures` and
+prints every number they draw, so that a caption can be checked against the
+output rather than against the picture.
+Continuous integration does not compare them byte for byte, because matplotlib
+output is not byte reproducible across platforms, font stacks, and library
+versions. What it does check is that the command still runs, that it still
+produces all three files, and that they still fit inside the 250 KB the
+repository budgets for them.
+
+## Results
+
+The default configuration throughout is flat profiles, the IPB98(y,2) scaling,
+the separatrix loss power convention, and a first wall reflectivity of 0.9.
 
 ### Field scaling, quantified
 
 From `uv run python examples/field_scaling.py`, 41 points from 4 T to 14 T at
 fixed size and shape, with the plasma current tracked so that the cylindrical
-safety factor stays at 5.004.
+safety factor stays at 5.004. This is the sweep the figure under the badges
+draws.
 
 | Held fixed | Fusion power exponent in field | Analytic expectation | Gain exponent | Confinement time exponent |
 | --- | --- | --- | --- | --- |
@@ -252,17 +240,14 @@ safety factor stays at 5.004.
 | Toroidal beta | +4.0000 | 4 | +4.4189 | +1.6774 |
 
 All three fits return a coefficient of determination of 1.000000, because the
-underlying relation is an exact power law in each case. The exponents are the
-whole high-field argument stated as a number. At fixed density the field buys
-nothing directly in fusion power and everything through confinement. At a fixed
-Greenwald fraction the density tracks the current, which tracks the field, so
-fusion power goes as the square of the field. At fixed beta the density goes as
-the square of the field and fusion power as the fourth power, which is the branch
-the compact high-field case is normally argued on.
-
-The gain exponents exceed the fusion power exponents in every case, because
-raising the field also lengthens the confinement time and so reduces the heating
-required.
+underlying relation is an exact power law in each case. At fixed density the
+field buys nothing directly in fusion power and everything through confinement.
+At a fixed Greenwald fraction the density tracks the current, which tracks the
+field, so fusion power goes as the square of the field. At fixed beta the density
+goes as the square of the field and fusion power as the fourth power, which is
+the branch the compact high-field case is normally argued on. The gain exponents
+exceed the fusion power exponents in every case, because raising the field also
+lengthens the confinement time and so reduces the heating required.
 
 Which limit binds first depends on the direction:
 
@@ -282,11 +267,11 @@ Sweeping the major radius instead, from 2 m to 8 m at fixed aspect ratio, field,
 and safety factor, gives a fusion power exponent of +1.0000 against the analytic
 expectation of 1. The volume goes as the cube of the radius while the Greenwald
 density falls as its inverse, and fusion power carries the square of the density.
-Only 12 of 41 points are feasible, from 2.75 m to 4.40 m: Troyon and the bootstrap
-fraction fail below that band and the L to H access threshold fails above it. That
-threshold is the binding constraint at 28 of the 41 points, because a large device
-at a fixed Greenwald fraction has a long confinement time, therefore a low loss
-power, and therefore cannot reach H-mode.
+Only 12 of 41 points are feasible, the lowest at 2.75 m and the highest at
+4.40 m: Troyon and the bootstrap fraction fail below that band and the L to H
+access threshold fails above it. That threshold is the binding constraint at 28
+of the 41 points, because a large device at a fixed Greenwald fraction has a long
+confinement time, therefore a low loss power, and therefore cannot reach H-mode.
 
 ### Net electrical efficiency
 
@@ -335,9 +320,9 @@ Where the sensitivity lies, one parameter at a time from the same baseline:
 Moving the heating wall plug efficiency from 0.35 to 0.70 is worth 160 MWe, more
 than any other parameter in the table. That is a consequence of the low gain, and
 it is the reason a current drive system is the component a recirculating-power
-study should look at first at this operating point. The cryoplant, often raised as
-the objection to a superconducting machine, is worth 48 MWe across the whole range
-from 2 to 50 MWe, a factor of three less than the heating system.
+study should look at first at this operating point. The cryoplant, often raised
+as the objection to a superconducting machine, is worth 48 MWe across the whole
+range from 2 to 50 MWe, a factor of three less than the heating system.
 
 The first wall reflectivity acts on the plasma rather than on the plant, and it
 acts strongly, because the synchrotron loss carries `sqrt(1 - R_w)`:
@@ -351,22 +336,23 @@ acts strongly, because the synchrotron loss carries `sqrt(1 - R_w)`:
 | 0.98 | 24.95 | 81.38 | 4.36 | 37.37 |
 
 At the baseline reflectivity the synchrotron loss of 55.80 MW is nine times the
-bremsstrahlung loss of 6.06 MW and is by far the largest radiated term. It is also
-the least reliable number in the model, for the reasons set out in the design
-notes, so the sensitivity is reported rather than a single value. Whether this
-design point produces net electricity at all depends on it.
+bremsstrahlung loss of 6.06 MW and is by far the largest radiated term. It is
+also the least reliable number in the model, for the reasons set out in the
+design notes, so the sensitivity is reported rather than a single value. Whether
+this design point produces net electricity at all depends on it.
 
 Sweeping the density from 0.6e20 to 2.4e20 per cubic metre with everything else
 held gives a best feasible net efficiency of 0.0629 at 1.59e20 per cubic metre,
-with 21 of 41 points feasible, spanning 0.69e20 to 1.59e20 per cubic metre. The
-unconstrained optimum is 0.1743 at 2.40e20 per cubic metre, which violates the
-Troyon, Greenwald, and bootstrap limits and is reported as violating them. Below
-0.69e20 per cubic metre the loss power falls under the L to H access threshold, so
-the feasible band is bounded on both sides.
+with 21 of 41 points feasible, the lowest at 0.69e20 and the highest at 1.59e20
+per cubic metre. The unconstrained optimum is 0.1743 at 2.40e20 per cubic metre,
+which violates the Troyon limit and is reported as violating it. Below 0.69e20
+per cubic metre the loss power falls under the L to H access threshold, so the
+feasible range is bounded on both sides.
 
 ### Sensitivity to the confinement scaling
 
-From `uv run python examples/scaling_sensitivity.py`.
+From `uv run python examples/scaling_sensitivity.py`. This is the largest
+uncertainty in the whole package, and it is reported rather than absorbed.
 
 | Scaling | Mode | Power degradation | Amplification into loss power |
 | --- | --- | --- | --- |
@@ -383,9 +369,9 @@ The same ARC design point under each:
 | Petty08 | 2.571 | 41.61 | 8.53 | 1.399 |
 
 The gain moves by a factor of 7.3 across three published scalings applied to one
-unchanged design point. This is the single largest source of uncertainty in the
-projection, larger than the profile shape and far larger than any engineering
-parameter in the efficiency table.
+unchanged design point. That spread is larger than the profile shape effect and
+far larger than any engineering parameter in the efficiency table, and it is the
+honest error bar on every gain and every efficiency reported here.
 
 Holding the scaling fixed and varying only the assumed H factor:
 
@@ -413,23 +399,26 @@ convention is a parameter here rather than a hidden decision.
 
 ### Lawson condition
 
-From `uv run python examples/power_balance.py`. Derived from the same balance the
-rest of the package solves, rather than quoted.
+![Lawson triple product requirement against temperature for a fusion gain of one, a gain of ten, and ignition, with ARC, ITER and SPARC all sitting below the ignition curve](docs/figures/lawson.png)
+
+From `uv run python examples/power_balance.py`. The requirement curves are
+derived from the same balance the rest of the package solves, rather than quoted.
 
 For a pure deuterium tritium plasma with classical bremsstrahlung and no
-dilution, the minimum ignition triple product is 2.95e21 per cubic metre keV
+dilution, the minimum ignition triple product is 2.9524e21 per cubic metre keV
 second at 14.25 keV, against the roughly 3e21 quoted in the standard references.
 Adding 5 percent helium ash and the relativistic bremsstrahlung correction raises
-it to 3.65e21 at 14.50 keV, a 24 percent penalty for a 10 percent fuel dilution,
-because fusion power carries the square of the fuel fraction while the stored
-energy carries only the first power.
+it to 3.6524e21 at 14.50 keV, a 24 percent penalty for a 10 percent fuel
+dilution, because fusion power carries the square of the fuel fraction while the
+stored energy carries only the first power.
 
-The flat-profile ARC point achieves a triple product of 1.957e21 per cubic metre
+The flat-profile ARC point achieves a triple product of 1.9571e21 per cubic metre
 keV second, which is 0.535 of the ignition requirement at its own temperature and
 composition. It is reported as not ignited, and the ignition temperature search
 returns no root, because with the IPB98(y,2) power degradation the transport loss
 rises as the temperature to the power 3.23 while the reactivity flattens above 30
-keV. At this density, ignition is not something raising the temperature can reach.
+keV. At this density, ignition is not something raising the temperature can
+reach.
 
 Synchrotron radiation is deliberately excluded from the Lawson condition. It
 carries a half power of density rather than the square, so including it would
@@ -437,93 +426,77 @@ make the condition a function of density and the curve would stop being a curve.
 Bremsstrahlung and coronal line radiation both scale as the square of density and
 are included.
 
-## Architecture
+## What this model does not do
 
-| Module | Responsibility |
-| --- | --- |
-| `src/arc_benchmark/_types.py` | The float64 array alias every public signature uses |
-| `src/arc_benchmark/model/constants.py` | Physical constants and the deuterium tritium reaction energetics |
-| `src/arc_benchmark/model/geometry.py` | Plasma shape: volume, surface area, poloidal perimeter, aspect ratio |
-| `src/arc_benchmark/model/reactivity.py` | Bosch and Hale reactivity fit, cross-section fit, and the Maxwellian integral of the second |
-| `src/arc_benchmark/model/profiles.py` | Parabolic profile correction factors, closed form except for fusion power |
-| `src/arc_benchmark/model/radiation.py` | Bremsstrahlung, cyclotron emission with the Trubnikov escape factor, impurity line radiation |
-| `src/arc_benchmark/model/confinement.py` | IPB98(y,2), ITER89-P, and Petty08 in one canonical exponent basis |
-| `src/arc_benchmark/model/limits.py` | Greenwald, Troyon, safety factor, bootstrap fraction, L to H threshold |
-| `src/arc_benchmark/model/plant.py` | Thermal conversion, recirculating power, net efficiency, engineering gain |
-| `src/arc_benchmark/algorithm/protocols.py` | The `ConfinementScaling` Protocol the solver works against |
-| `src/arc_benchmark/algorithm/balance.py` | Plasma state, composition, and every state-dependent power term |
-| `src/arc_benchmark/algorithm/operating.py` | Closed-form steady-state solve and the bracketed ignition temperature search |
-| `src/arc_benchmark/algorithm/constraints.py` | Limits turned into verdicts, with utilisation and the binding constraint |
-| `src/arc_benchmark/algorithm/lawson.py` | Ignition condition, gain-dependent requirement, and the triple product optimum |
-| `src/arc_benchmark/pipeline/machines.py` | ARC, ITER, and SPARC with their published values and their sources |
-| `src/arc_benchmark/pipeline/sweep.py` | Field, radius, and density sweeps with an explicit invariant |
-| `src/arc_benchmark/pipeline/benchmark.py` | Reproduction of published points and the implied H factor |
-| `src/arc_benchmark/pipeline/trace.py` | The structured records the pipeline produces |
-| `src/arc_benchmark/analysis/metrics.py` | Log-space power law fits and binding constraint tallies |
-| `src/arc_benchmark/analysis/report.py` | Text tables built from traces |
-| `src/arc_benchmark/analysis/tables.py` | The same traces as data frames |
-| `src/arc_benchmark/analysis/figures.py` | Sweep, Lawson, and power balance figures |
-| `examples/` | Thin wiring scripts with no logic of their own |
+A zero-dimensional balance is the right instrument for asking how the answer
+moves when the field, the size, the density, or the confinement assumption moves.
+It is the wrong instrument for asking what the profiles are, and it does not
+attempt that. There is no transport solution, no impurity transport, no divertor
+heat flux, no magnet engineering, and no time dependence. Extrapolating an
+empirical confinement scaling to a machine outside the database it was fitted to
+is the dominant uncertainty in any projection of this kind, and the factor of 7.3
+in the table above is what that uncertainty looks like when it is measured
+instead of asserted.
 
-The dependency direction is one way: `model` knows nothing of anything else,
-`algorithm` uses `model`, `pipeline` uses both, `analysis` reads what `pipeline`
-produces, and `examples` only wires those together. The confinement scalings live
-in `model` and satisfy the Protocol declared in `algorithm` structurally, without
-importing it, so a caller can supply a scaling this package has never heard of.
+Every one of those exclusions is written out, with what it costs and what the
+rejected alternative would have been, in
+[docs/design-notes.md](docs/design-notes.md). That document also records the one
+limitation that has been closed and what closing it cost.
 
-## Testing
+## How it is checked
 
 ```bash
-uv run pytest
+uv run pytest -q
 uv run ruff check .
 uv run mypy
+uv run pytest --cov=src/arc_benchmark --cov-report=term-missing
 ```
 
-The suite has three tiers: property and invariant tests covering the mathematics,
-regression tests pinning recorded behaviour, and integration tests running each
-example script under a reduced iteration count.
+223 tests run in about two seconds and cover 95 percent of the package.
+Continuous integration runs the same commands on Ubuntu and on Windows, with
+`--cov-fail-under=93`, which is the measured coverage rounded down and reduced by
+two so that a small platform difference in which lines execute cannot fail the
+build while a real drop in coverage still does.
 
-Tier one covers the mathematics, with four checks that reach outside this package
-entirely. The Bosch and Hale reactivity is compared against the values tabulated
-in the source paper at five temperatures spanning four orders of magnitude. The
-same reactivity is compared against a numerical Maxwellian average of the separate
-cross-section fit from the same paper, which has different coefficients and was
-derived by a different procedure; the two agree to within 0.75 percent across 1 to
-100 keV. IPB98(y,2) is compared against the published ITER confinement time. The
-Greenwald fraction, the safety factor at the 95 percent flux surface, and the L to
-H access threshold are compared against published values for ITER, ARC, and SPARC.
-The coefficient of the cyclotron emission is assembled from the elementary charge,
-the electron mass, the electric constant, and the speed of light, and checked
-against the literal usually quoted for it.
+The suite has three tiers. Tier one covers the mathematics, and four of its
+checks reach outside this package entirely: the Bosch and Hale reactivity against
+the values tabulated in the source paper at five temperatures spanning four
+orders of magnitude, the same reactivity against a numerical Maxwellian average
+of the separate cross-section fit from the same paper, which has different
+coefficients and was derived by a different procedure and agrees to within 0.75
+percent across 1 to 100 keV, IPB98(y,2) against the published ITER confinement
+time, and the Greenwald fraction, the safety factor at the 95 percent flux
+surface, and the L to H access threshold against published values for all three
+machines. The cyclotron emission coefficient is assembled from the elementary
+charge, the electron mass, the electric constant, and the speed of light and
+checked against the literal usually quoted for it, which tests both at once.
 
-The rest of tier one asserts properties by construction: the power balance closes
-to 1e-9 MW under both loss power conventions and all three scalings; the solved
-confinement time is the one the scaling returns at the solved loss power; the gain
-rises monotonically with the confinement time; the ignition boundary, located by
-root finding, has the alpha power exactly equal to radiation plus transport;
-doubling the field at fixed beta multiplies fusion power by exactly sixteen and at
-a fixed Greenwald fraction by exactly four, both against the analytic expectation;
-every confinement exponent is recovered by perturbing its own input; and a design
-point above the Greenwald limit or below the safety factor limit is flagged rather
-than returned.
+The rest of tier one asserts properties by construction: the balance closes to
+1e-9 MW under both loss power conventions and all three scalings; the solved
+confinement time is the one the scaling returns at the solved loss power; the
+gain rises monotonically with the confinement time; doubling the field at fixed
+beta multiplies fusion power by exactly sixteen; every confinement exponent is
+recovered by perturbing its own input; the profile factors are checked against
+direct quadratures of the integrals they are closed forms of; and a design point
+above the Greenwald limit or below the safety factor limit is flagged rather than
+returned.
 
-Tier two pins a recorded reference run. Every operating point in this package is a
+Tier two pins a recorded reference run. Every operating point here is a
 closed-form inversion with no iteration, so those values are pinned at 1e-10
-relative, a tolerance derived from the operation count and the machine epsilon.
-The one iterative result that is pinned, the Lawson optimum, is pinned to the
-tolerance its minimiser was asked to converge to and not to the digits it happens
-to produce. Sweep-derived quantities are quantised by the sweep resolution, so a
-crossing field is pinned to one sweep step and counts are pinned as integers. An
-unconverged solve is never pinned: the ignition temperature search returns `None`
-when its bracket contains no sign change, and that is what the test asserts. The
-reasoning is written out in the module docstring of `tests/test_regression.py`.
+relative, a tolerance derived from the operation count and the machine epsilon
+rather than from any difference observed between two machines. The one iterative
+result that is pinned, the Lawson optimum, is pinned to the tolerance its
+minimiser was asked to converge to. Sweep-derived quantities are quantised by the
+sweep resolution, so a crossing field is pinned to one sweep step and counts are
+pinned as integers. An unconverged solve is never pinned: the ignition
+temperature search returns `None` when its bracket contains no sign change, and
+that is what the test asserts.
 
 Tier three loads each script in `examples/` and calls its `main` with `--quick`,
-asserting a zero return code, non-empty output, and the specific facts each script
-exists to produce. One script is additionally run with figures enabled so that the
-plotting code is exercised.
-
-The full suite of 206 tests runs in under 2 seconds.
+asserting a zero return code, non-empty output, and the specific facts each
+script exists to produce. Two of them are additionally run with figures enabled,
+so a figure that raises, or a set of figures that outgrows its size budget,
+cannot reach a release.
 
 ## References
 
@@ -556,7 +529,7 @@ Physics:
   G. H. Neilson. "A new look at density limits in tokamaks." *Nuclear Fusion* 28,
   no. 12 (1988): 2199 to 2207.
   DOI [10.1088/0029-5515/28/12/009](https://doi.org/10.1088/0029-5515/28/12/009).
-  The density limit.
+  The density limit, stated against the line-averaged density.
 - Troyon, F., R. Gruber, H. Saurenmann, S. Semenzato, and S. Succi. "MHD limits to
   plasma confinement." *Plasma Physics and Controlled Fusion* 26, no. 1A (1984):
   209 to 215.
@@ -612,8 +585,9 @@ Physics:
   The shaping-corrected formula for the safety factor at the 95 percent flux
   surface.
 - Wesson, J. *Tokamaks.* 4th edition. Oxford: Oxford University Press, 2011.
-  ISBN 978-0-19-959223-4. The classical bremsstrahlung coefficient and the
-  cylindrical safety factor.
+  ISBN 978-0-19-959223-4. The classical bremsstrahlung coefficient, the
+  cylindrical safety factor, and the parabolic profile family the correction
+  factors are built on.
 - Creely, A. J., M. J. Greenwald, S. B. Ballinger, D. Brunner, J. Canik,
   J. Doody, T. Fuelop, D. T. Garnier, R. Granetz, T. K. Gray, C. Holland,
   N. T. Howard, J. W. Hughes, J. H. Irby, V. A. Izzo, G. J. Kramer, A. Q. Kuang,
@@ -646,13 +620,15 @@ Dependencies:
   constraint, and benchmark traces as data frames so that a study can sort,
   filter, and join them without walking the trace objects.
 - [Matplotlib](https://matplotlib.org/) (>= 3.9), Matplotlib license, a BSD-style
-  permissive license. Sweep, Lawson, and power balance figures, used under the
-  non-interactive Agg backend.
+  permissive license. Every figure, drawn under the non-interactive Agg backend.
 - [pytest](https://pytest.org/) (>= 8.3), MIT. Test runner, development only.
+- [pytest-cov](https://pytest-cov.readthedocs.io/) (>= 6.0), MIT. Coverage
+  measurement and the floor enforced in continuous integration, development only.
 - [Ruff](https://docs.astral.sh/ruff/) (>= 0.8), MIT. Linter and import sorter,
   development only.
 - [mypy](https://mypy-lang.org/) (>= 1.13), MIT. Static type checker in strict
-  mode, development only.
+  mode, development only. The package ships a `py.typed` marker, so the types it
+  is checked against are the types it delivers to anything that installs it.
 
 ## License
 
