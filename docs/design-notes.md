@@ -77,6 +77,24 @@ one input and checking that the confinement time changes by two to that exponent
 goes through the same arithmetic the solver uses, which reading the dataclass
 does not.
 
+The canonical basis makes the three comparable to each other. It does not make
+them comparable to a transport model, which is a statement about the normalised
+gyroradius, the beta, and the collisionality rather than about the current and
+the field. That conversion is provided, and it is placed in the algorithm layer
+rather than beside the scalings because it is not a property of a scaling on its
+own: the loss power in a fit is not an independent variable at a solved steady
+state, and eliminating it uses the same balance the operating point solver
+inverts. Doing it anywhere else would have put a power balance inside a
+subpackage whose whole claim is that it contains none.
+
+What that buys is a check the package could not previously make on its own
+description of Petty08. It is called a constant-beta constrained fit throughout,
+and the conversion returns a beta exponent of 0.019 for it against -0.90 for
+IPB98(y,2), so the description is now measured rather than repeated. The
+conversion is itself checked against the dimensionless form the ITER Physics
+Basis publishes for IPB98(y,2), which it reproduces from the engineering
+exponents alone.
+
 ### Loss power convention as a parameter
 
 Whether core radiation is subtracted before the confinement scaling is evaluated

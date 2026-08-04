@@ -1,8 +1,9 @@
 """How much of the answer is the confinement scaling rather than the physics.
 
 Runs the same benchmark and the same field sweep under three confinement
-scalings, and measures the amplification factor by which an error in the
-confinement time becomes an error in the required heating power.
+scalings, measures the amplification factor by which an error in the confinement
+time becomes an error in the required heating power, and rewrites each scaling
+in the dimensionless variables transport theory is written in.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import numpy as np
 
 from arc_benchmark.algorithm.balance import LossPowerConvention
 from arc_benchmark.algorithm.constraints import ConstraintLimits
+from arc_benchmark.algorithm.dimensionless import dimensionless_exponents
 from arc_benchmark.algorithm.operating import solve_operating_point
 from arc_benchmark.analysis.metrics import fit_power_law, sweep_series
 from arc_benchmark.model.confinement import CONFINEMENT_SCALINGS
@@ -48,6 +50,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         "  The loss power at a solved steady state goes as the stored energy to the "
         "power 1 / (1 - alpha_P), so an error in the confinement time is amplified by "
         "that exponent before it reaches the required heating power."
+    )
+
+    print()
+    print("The same three scalings in dimensionless variables, at fixed shape and isotope")
+    print(
+        f"  {'scaling':12} {'rho_star':>9} {'beta':>9} {'nu_star':>9} {'q':>9} "
+        f"{'residual R':>11}"
+    )
+    for name, scaling in CONFINEMENT_SCALINGS.items():
+        exponents = dimensionless_exponents(scaling)
+        print(
+            f"  {name:12} {exponents.normalised_gyroradius:+9.4f} {exponents.beta:+9.4f} "
+            f"{exponents.collisionality:+9.4f} {exponents.safety_factor:+9.4f} "
+            f"{exponents.dimensional_residual:+11.4f}"
+        )
+    print(
+        "  Bohm diffusion gives a normalised gyroradius exponent of -2 and gyro-Bohm "
+        "gives -3, so the three fits span that interval. The residual exponent of the "
+        "major radius is zero for a scaling that satisfies the Kadomtsev constraint, so "
+        "its size is how far each fit is from being expressible in dimensionless "
+        "variables alone."
     )
 
     print()

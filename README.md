@@ -397,6 +397,46 @@ IPB98 regression itself was fitted with, gives 50.37 MW and a gain of 7.05. Both
 are defensible and the difference is a factor of 2.2 in the reported gain, so the
 convention is a parameter here rather than a hidden decision.
 
+Everything above compares the three scalings by what they do to one design
+point. They can also be compared directly, with no design point at all, once the
+loss power has been eliminated. At a solved steady state the loss power is the
+stored energy divided by the confinement time, so a scaling written in
+engineering variables becomes a power law in the dimensionless parameters
+transport theory is written in: the normalised gyroradius, the beta, the
+collisionality, and the safety factor.
+
+| Scaling | `rho*` | beta | `nu*` | q | Residual R |
+| --- | --- | --- | --- | --- | --- |
+| IPB98(y,2) | -2.6935 | -0.8952 | -0.0081 | -3.0000 | -0.0081 |
+| ITER89-P | -2.0500 | -0.5250 | -0.2750 | -1.7000 | -0.0750 |
+| Petty08 | -3.0189 | +0.0189 | -0.3019 | -1.4151 | -0.0189 |
+
+Bohm diffusion gives a normalised gyroradius exponent of -2 and gyro-Bohm gives
+-3, so ITER89-P is Bohm, Petty08 is gyro-Bohm, and IPB98(y,2) lies between them
+at -2.69. The beta column is the one that changes an answer. IPB98(y,2) carries
+a beta degradation of -0.90 while Petty08 carries none, and Petty08 carries none
+because it is fitted under exactly that constraint; its residual 0.019 is what
+two decimal places in the published exponents cost, and it is checked against
+that bound rather than against zero.
+
+The last column is the exponent of a dimensional length that no dimensionless
+parameter can absorb. It is zero for a scaling that satisfies the Kadomtsev
+constraint. IPB98(y,2) and Petty08 come out at 0.008 and 0.019, both inside what
+the two decimal places of their published exponents could account for on their
+own, so neither can be shown to violate it from what this package carries.
+ITER89-P comes out at 0.075 against a rounding bound of 0.052, so its
+inconsistency is a property of the fit rather than of its rounding: doubling the
+machine size at fixed dimensionless parameters moves its Bohm-normalised
+confinement time by 5.1 percent, and a scaling that satisfied the constraint
+would not move it at all.
+
+The conversion introduces nothing fitted of its own, and it is checked
+against the dimensionless form the ITER Physics Basis publishes for IPB98(y,2),
+exponents of -2.70 on `rho*`, -0.90 on beta, -0.01 on `nu*`, and -3.0 on the
+safety factor, all four of which it reproduces from the engineering exponents
+alone. That is asserted in `tests/test_dimensionless.py` rather than only stated
+here.
+
 ### Lawson condition
 
 ![Lawson triple product requirement against temperature for a fusion gain of one, a gain of ten, and ignition, with ARC, ITER and SPARC all sitting below the ignition curve](docs/figures/lawson.png)
@@ -452,34 +492,37 @@ uv run mypy
 uv run pytest --cov=src/arc_benchmark --cov-report=term-missing
 ```
 
-223 tests run in about two seconds and cover 95 percent of the package.
+251 tests run in about two seconds and cover 95 percent of the package.
 Continuous integration runs the same commands on Ubuntu and on Windows, with
 `--cov-fail-under=93`, which is the measured coverage rounded down and reduced by
 two so that a small platform difference in which lines execute cannot fail the
 build while a real drop in coverage still does.
 
-The suite has three tiers. Tier one covers the mathematics, and four of its
+The suite has three tiers. Tier one covers the mathematics, and five of its
 checks reach outside this package entirely: the Bosch and Hale reactivity against
 the values tabulated in the source paper at five temperatures spanning four
 orders of magnitude, the same reactivity against a numerical Maxwellian average
 of the separate cross-section fit from the same paper, which has different
 coefficients and was derived by a different procedure and agrees to within 0.75
 percent across 1 to 100 keV, IPB98(y,2) against the published ITER confinement
-time, and the Greenwald fraction, the safety factor at the 95 percent flux
-surface, and the L to H access threshold against published values for all three
-machines. The cyclotron emission coefficient is assembled from the elementary
-charge, the electron mass, the electric constant, and the speed of light and
-checked against the literal usually quoted for it, which tests both at once.
+time, the same scaling in dimensionless form against the four exponents its own
+source quotes for it, and the Greenwald fraction, the safety factor at the 95
+percent flux surface, and the L to H access threshold against published values
+for all three machines. The cyclotron emission coefficient is assembled from the
+elementary charge, the electron mass, the electric constant, and the speed of
+light and checked against the literal usually quoted for it, which tests both at
+once.
 
 The rest of tier one asserts properties by construction: the balance closes to
 1e-9 MW under both loss power conventions and all three scalings; the solved
 confinement time is the one the scaling returns at the solved loss power; the
 gain rises monotonically with the confinement time; doubling the field at fixed
 beta multiplies fusion power by exactly sixteen; every confinement exponent is
-recovered by perturbing its own input; the profile factors are checked against
-direct quadratures of the integrals they are closed forms of; and a design point
-above the Greenwald limit or below the safety factor limit is flagged rather than
-returned.
+recovered by perturbing its own input, and every dimensionless exponent by
+scanning its own parameter while the other three are held; the profile factors
+are checked against direct quadratures of the integrals they are closed forms
+of; and a design point above the Greenwald limit or below the safety factor
+limit is flagged rather than returned.
 
 Tier two pins a recorded reference run. Every operating point here is a
 closed-form inversion with no iteration, so those values are pinned at 1e-10
@@ -548,6 +591,11 @@ Physics:
   *Physics of Plasmas* 15, no. 8 (2008): 080501.
   DOI [10.1063/1.2961043](https://doi.org/10.1063/1.2961043).
   The constant-beta constrained H-mode confinement fit.
+- Kadomtsev, B. B. "Tokamaks and dimensional analysis." *Soviet Journal of
+  Plasma Physics* 1 (1975): 295 to 300.
+  The constraint that a confinement scaling be expressible in dimensionless
+  parameters alone, which is what the residual exponent of the major radius in
+  the scaling table measures the violation of.
 - Martin, Y. R., T. Takizuka, and the ITPA CDBM H-mode Threshold Database Working
   Group. "Power requirement for accessing the H-mode in ITER."
   *Journal of Physics: Conference Series* 123 (2008): 012033.
