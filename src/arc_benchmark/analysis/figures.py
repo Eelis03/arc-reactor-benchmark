@@ -339,9 +339,10 @@ def plot_benchmark_diagnosis(
 
     series = (
         ("this model, flat profiles", [flat.named(n).point.terms.fusion_power_mw for n in names]),
-        ("this model, peaked profiles", [
-            peaked.named(n).point.terms.fusion_power_mw for n in names
-        ]),
+        (
+            "this model, peaked profiles",
+            [peaked.named(n).point.terms.fusion_power_mw for n in names],
+        ),
         ("published design value", [published_fusion(flat, n) for n in names]),
     )
     for index, (label, values) in enumerate(series):
@@ -371,9 +372,7 @@ def plot_benchmark_diagnosis(
         value = implied[index]
         if value is None:
             continue
-        right.plot(
-            [index, index], [assumed[index], value], color=_MUTED, linewidth=1.5, zorder=1
-        )
+        right.plot([index, index], [assumed[index], value], color=_MUTED, linewidth=1.5, zorder=1)
         right.text(
             index + 0.12,
             (assumed[index] + value) / 2.0,
@@ -524,9 +523,7 @@ def plot_power_balance(
         label="auxiliary heating",
     )
     axis.bar(positions + width / 2, brem, width, color=_MUTED, label="bremsstrahlung")
-    axis.bar(
-        positions + width / 2, syn, width, bottom=brem, color=SERIES[2], label="synchrotron"
-    )
+    axis.bar(positions + width / 2, syn, width, bottom=brem, color=SERIES[2], label="synchrotron")
     axis.bar(
         positions + width / 2,
         line,

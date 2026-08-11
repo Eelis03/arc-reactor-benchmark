@@ -102,8 +102,7 @@ class PlasmaComposition:
             raise ValueError(f"mass_number must be positive, got {self.mass_number}")
         if self.fuel_fraction <= 0.0:
             raise ValueError(
-                "impurity and helium content leaves no fuel: fuel fraction is "
-                f"{self.fuel_fraction}"
+                f"impurity and helium content leaves no fuel: fuel fraction is {self.fuel_fraction}"
             )
 
     @property
@@ -213,10 +212,7 @@ class PlasmaState:
         """
         density_sum = self.electron_density + self.ion_density
         return (
-            density_sum
-            * self.temperature_kev
-            * JOULE_PER_KEV
-            * self.profile.stored_energy_factor()
+            density_sum * self.temperature_kev * JOULE_PER_KEV * self.profile.stored_energy_factor()
         )
 
     @property

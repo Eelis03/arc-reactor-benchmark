@@ -102,9 +102,7 @@ def lawson_n_tau(
     fuel_half = 0.5 * composition.fuel_fraction
 
     heating_multiplier = 1.0 + 1.0 / (ALPHA_FRACTION * gain) if math.isfinite(gain) else 1.0
-    heating = (
-        heating_multiplier * fuel_half**2 * reactivity * ALPHA_ENERGY_KEV * JOULE_PER_KEV
-    )
+    heating = heating_multiplier * fuel_half**2 * reactivity * ALPHA_ENERGY_KEV * JOULE_PER_KEV
 
     correction = 1.0
     if relativistic_bremsstrahlung:
@@ -117,9 +115,7 @@ def lawson_n_tau(
         * correction
     )
     if include_line_radiation:
-        radiation += sum(
-            imp.concentration * imp.loss_parameter for imp in composition.impurities
-        )
+        radiation += sum(imp.concentration * imp.loss_parameter for imp in composition.impurities)
 
     net = heating - radiation
     if net <= 0.0:

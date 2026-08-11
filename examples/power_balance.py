@@ -78,9 +78,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     # impurities, and classical bremsstrahlung. It is the number the standard
     # references quote as roughly 3e21, and the difference between the two lines
     # is what dilution and the relativistic correction cost.
-    classical = optimum_lawson_temperature(
-        PlasmaComposition(), relativistic_bremsstrahlung=False
-    )
+    classical = optimum_lawson_temperature(PlasmaComposition(), relativistic_bremsstrahlung=False)
     print(
         f"  minimum for a pure plasma      {classical.triple_product:10.4e} m^-3 keV s "
         f"at {classical.temperature_kev:.2f} keV"

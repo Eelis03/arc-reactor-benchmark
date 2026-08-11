@@ -141,9 +141,7 @@ def sweep_lines(trace: SweepTrace, stride: int = 1) -> list[str]:
         raise ValueError(f"stride must be at least 1, got {stride}")
 
     has_plant = all(point.plant is not None for point in trace.points)
-    header = (
-        f"{trace.variable} sweep, {trace.units}, {trace.scaling_name}, holding: {trace.policy}"
-    )
+    header = f"{trace.variable} sweep, {trace.units}, {trace.scaling_name}, holding: {trace.policy}"
     columns = (
         f"{'value':>10} {'P_fus MW':>10} {'P_aux MW':>10} {'Q':>10} {'tau_E s':>9} "
         f"{'binding':>14} {'ok':>5}"

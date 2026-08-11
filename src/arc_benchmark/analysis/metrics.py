@@ -128,9 +128,7 @@ def sweep_series(trace: SweepTrace, quantity: str) -> tuple[float, ...]:
                 f"quantity {quantity!r} needs a plant model, which this sweep was run without"
             )
         return tuple(plant[quantity](p.plant) for p in trace.points if p.plant is not None)
-    raise KeyError(
-        f"unknown quantity {quantity!r}; have {sorted(plasma) + sorted(plant)}"
-    )
+    raise KeyError(f"unknown quantity {quantity!r}; have {sorted(plasma) + sorted(plant)}")
 
 
 def binding_constraint_counts(trace: SweepTrace) -> dict[str, int]:

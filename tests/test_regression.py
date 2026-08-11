@@ -251,9 +251,7 @@ def test_lawson_optimum_is_unchanged_within_its_convergence_tolerance() -> None:
 
 def test_classical_lawson_optimum_for_a_pure_plasma_is_unchanged() -> None:
     """The textbook case, with no dilution and no relativistic correction."""
-    optimum = optimum_lawson_temperature(
-        PlasmaComposition(), relativistic_bremsstrahlung=False
-    )
+    optimum = optimum_lawson_temperature(PlasmaComposition(), relativistic_bremsstrahlung=False)
     assert optimum.temperature_kev == pytest.approx(14.245459561040922, abs=1.0e-5)
     assert optimum.triple_product == pytest.approx(2.952434109140229e21, rel=1.0e-9)
 
@@ -318,9 +316,7 @@ def test_the_feasible_band_of_the_field_sweep_is_unchanged() -> None:
         IPB98Y2,
         plant=case.plant,
     )
-    feasible_indices = [
-        index for index, point in enumerate(trace.points) if point.feasible
-    ]
+    feasible_indices = [index for index, point in enumerate(trace.points) if point.feasible]
     assert (feasible_indices[0], feasible_indices[-1]) == (14, 31)
     assert trace.values[feasible_indices[0]] == pytest.approx(7.50, abs=0.5 * step)
     assert trace.values[feasible_indices[-1]] == pytest.approx(11.75, abs=0.5 * step)

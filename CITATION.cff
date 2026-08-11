@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Arc Reactor Benchmark"
+abstract: >-
+  A zero-dimensional deuterium tritium power balance for ARC-class compact
+  high-field tokamaks, evaluating the operational limits a design point has to
+  respect and converting the result into net electrical output. Every quantity is
+  benchmarked against three published design points, ARC, ITER and SPARC, and the
+  disagreements are reported rather than tuned away.
+type: software
+authors:
+  - family-names: Yilmaz
+    given-names: Emre
+repository-code: "https://github.com/Eelis03/arc-reactor-benchmark"
+license: MIT
+version: "0.1.0"
+date-released: "2026-08-11"
+keywords:
+  - fusion-energy
+  - tokamak
+  - plasma-physics
+  - benchmark
+  - python

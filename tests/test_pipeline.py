@@ -239,9 +239,7 @@ def test_benchmark_rows_report_signed_relative_error() -> None:
     result = run_benchmark_case(_ARC, IPB98Y2)
     for row in result.rows:
         assert row.absolute_error == pytest.approx(row.computed - row.published, rel=1.0e-14)
-        assert row.relative_error == pytest.approx(
-            row.absolute_error / row.published, rel=1.0e-14
-        )
+        assert row.relative_error == pytest.approx(row.absolute_error / row.published, rel=1.0e-14)
 
 
 def test_implied_confinement_multiplier_is_reported_for_every_machine() -> None:
@@ -286,19 +284,14 @@ def test_a_sweep_report_states_how_many_points_are_feasible() -> None:
     nothing feasible says so instead of naming a range it does not have.
     """
     case = machine("ARC")
-    trace = field_sweep(
-        case.state, np.linspace(4.0, 14.0, 41), scaling=IPB98Y2, plant=case.plant
-    )
+    trace = field_sweep(case.state, np.linspace(4.0, 14.0, 41), scaling=IPB98Y2, plant=case.plant)
     expected = len(trace.feasible_points)
-    assert any(
-        f"feasible at {expected} of 41 points" in line for line in sweep_lines(trace)
-    )
+    assert any(f"feasible at {expected} of 41 points" in line for line in sweep_lines(trace))
 
     hopeless = density_sweep(case.state, np.linspace(4.0e20, 6.0e20, 5), IPB98Y2)
     assert not hopeless.feasible_points
     assert any(
-        "no point in the sweep satisfies every constraint" in line
-        for line in sweep_lines(hopeless)
+        "no point in the sweep satisfies every constraint" in line for line in sweep_lines(hopeless)
     )
 
 
@@ -314,9 +307,7 @@ def test_reports_render_without_raising_and_mention_the_verdict() -> None:
     constraints = constraint_lines(report)
     assert any("binding constraint" in line for line in constraints)
 
-    trace = field_sweep(
-        _ARC.state, np.linspace(8.0, 12.0, 5), scaling=IPB98Y2, plant=_ARC.plant
-    )
+    trace = field_sweep(_ARC.state, np.linspace(8.0, 12.0, 5), scaling=IPB98Y2, plant=_ARC.plant)
     sweep_text = sweep_lines(trace)
     assert any("binding constraint across the sweep" in line for line in sweep_text)
     assert any("eta_net" in line for line in sweep_text)
@@ -328,9 +319,7 @@ def test_reports_render_without_raising_and_mention_the_verdict() -> None:
 
 def test_frames_carry_the_same_numbers_as_the_trace() -> None:
     """The data frames are a view of the trace, not a rounded copy of it."""
-    trace = field_sweep(
-        _ARC.state, np.linspace(8.0, 12.0, 5), scaling=IPB98Y2, plant=_ARC.plant
-    )
+    trace = field_sweep(_ARC.state, np.linspace(8.0, 12.0, 5), scaling=IPB98Y2, plant=_ARC.plant)
     frame = sweep_frame(trace)
     assert len(frame) == len(trace.points)
     assert list(frame["toroidal field on axis"]) == list(trace.values)

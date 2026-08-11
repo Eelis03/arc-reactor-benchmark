@@ -105,8 +105,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     print()
     print("Figure 3, the fusion power gap and the implied confinement enhancement")
-    print(f"  {'machine':8} {'flat MW':>9} {'peaked MW':>10} {'published MW':>13} "
-          f"{'H assumed':>10} {'H implied':>10} {'ratio':>7}")
+    print(
+        f"  {'machine':8} {'flat MW':>9} {'peaked MW':>10} {'published MW':>13} "
+        f"{'H assumed':>10} {'H implied':>10} {'ratio':>7}"
+    )
     for result in flat.results:
         name = result.machine
         published = next(row.published for row in result.rows if row.quantity == "fusion power")

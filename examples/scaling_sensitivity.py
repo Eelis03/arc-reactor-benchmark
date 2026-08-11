@@ -42,10 +42,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"  {'scaling':12} {'mode':>5} {'alpha_P':>9} {'1/(1-alpha_P)':>15}")
     for name, scaling in CONFINEMENT_SCALINGS.items():
         alpha = scaling.power_degradation
-        print(
-            f"  {name:12} {scaling.confinement_mode:>5} {alpha:9.3f} "
-            f"{1.0 / (1.0 - alpha):15.3f}"
-        )
+        print(f"  {name:12} {scaling.confinement_mode:>5} {alpha:9.3f} {1.0 / (1.0 - alpha):15.3f}")
     print(
         "  The loss power at a solved steady state goes as the stored energy to the "
         "power 1 / (1 - alpha_P), so an error in the confinement time is amplified by "
@@ -113,9 +110,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print("Loss power convention, which changes whether radiation is subtracted")
     print(f"  {'convention':12} {'P_loss MW':>11} {'P_aux MW':>10} {'Q':>8}")
     for convention in LossPowerConvention:
-        solved = solve_operating_point(
-            case.state, CONFINEMENT_SCALINGS["IPB98(y,2)"], convention
-        )
+        solved = solve_operating_point(case.state, CONFINEMENT_SCALINGS["IPB98(y,2)"], convention)
         print(
             f"  {convention.value:12} {solved.loss_power_mw:11.2f} "
             f"{solved.auxiliary_power_mw:10.2f} {solved.fusion_gain:8.2f}"
