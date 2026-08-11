@@ -41,9 +41,7 @@ def test_minimum_triple_product_matches_the_classical_value() -> None:
 
 def test_ignition_requires_more_than_a_gain_of_ten() -> None:
     """The requirement rises monotonically with the target gain, up to ignition."""
-    values = [
-        lawson_n_tau(15.0, _PURE, gain) for gain in (1.0, 2.0, 5.0, 10.0, 50.0, math.inf)
-    ]
+    values = [lawson_n_tau(15.0, _PURE, gain) for gain in (1.0, 2.0, 5.0, 10.0, 50.0, math.inf)]
     assert all(b > a for a, b in itertools.pairwise(values))
 
 
@@ -94,18 +92,14 @@ def test_a_cold_plasma_cannot_ignite_at_any_confinement() -> None:
 
 def test_an_impurity_load_can_make_ignition_impossible() -> None:
     """Enough line radiation removes the ignition window entirely."""
-    poisoned = PlasmaComposition(
-        impurities=(ImpurityRadiator("tungsten", 74, 5.0e-4, 8.0e-32),)
-    )
+    poisoned = PlasmaComposition(impurities=(ImpurityRadiator("tungsten", 74, 5.0e-4, 8.0e-32),))
     assert math.isinf(lawson_n_tau(15.0, poisoned))
     assert math.isfinite(lawson_n_tau(15.0, PlasmaComposition()))
 
 
 def test_line_radiation_can_be_excluded_from_the_condition() -> None:
     """Turning the line term off lowers the requirement, since it is a loss."""
-    dirty = PlasmaComposition(
-        impurities=(ImpurityRadiator("argon", 18, 1.0e-3, 3.0e-33),)
-    )
+    dirty = PlasmaComposition(impurities=(ImpurityRadiator("argon", 18, 1.0e-3, 3.0e-33),))
     with_line = lawson_n_tau(15.0, dirty, include_line_radiation=True)
     without_line = lawson_n_tau(15.0, dirty, include_line_radiation=False)
     assert without_line < with_line
@@ -115,9 +109,7 @@ def test_triple_product_is_the_requirement_times_the_temperature() -> None:
     """The two forms of the condition are consistent, to the last bit."""
     for temperature in (8.0, 15.0, 25.0, 40.0):
         point = lawson_triple_product(temperature, _ASHY)
-        assert point.triple_product == pytest.approx(
-            point.n_tau * temperature, rel=1.0e-15
-        )
+        assert point.triple_product == pytest.approx(point.n_tau * temperature, rel=1.0e-15)
 
 
 def test_the_optimum_is_a_genuine_minimum() -> None:

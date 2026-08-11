@@ -99,9 +99,7 @@ def test_escape_factor_is_a_small_fraction_at_reactor_parameters() -> None:
         (1.3e20, 14.0, 9.2, 1.13),
         (3.1e20, 7.3, 12.2, 0.57),
     ):
-        factor = float(
-            cyclotron_escape_factor(density, temperature, field, minor_radius, 0.9)
-        )
+        factor = float(cyclotron_escape_factor(density, temperature, field, minor_radius, 0.9))
         assert 0.005 < factor < 0.1
 
 
@@ -110,9 +108,7 @@ def test_synchrotron_is_the_product_of_the_two_parts() -> None:
     args = (1.3e20, 14.0, 9.2)
     thin = float(optically_thin_cyclotron_density(*args))
     factor = float(cyclotron_escape_factor(*args, 1.13, 0.9))
-    assert float(synchrotron_density(*args, 1.13, 0.9)) == pytest.approx(
-        thin * factor, rel=1.0e-14
-    )
+    assert float(synchrotron_density(*args, 1.13, 0.9)) == pytest.approx(thin * factor, rel=1.0e-14)
 
 
 def test_synchrotron_carries_the_expected_field_exponent() -> None:

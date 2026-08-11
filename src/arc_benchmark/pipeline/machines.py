@@ -240,9 +240,7 @@ _SPARC = MachineCase(
     ),
 )
 
-MACHINES: Final[dict[str, MachineCase]] = {
-    case.name: case for case in (_ARC, _ITER, _SPARC)
-}
+MACHINES: Final[dict[str, MachineCase]] = {case.name: case for case in (_ARC, _ITER, _SPARC)}
 """Every published design point, keyed by machine name."""
 
 

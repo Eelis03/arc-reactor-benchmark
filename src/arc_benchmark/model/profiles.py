@@ -114,9 +114,7 @@ class ProfileShape:
         """
         exponent = 0.5 * self.density_exponent + 1.5 * self.temperature_exponent
         return float(
-            math.sqrt(self.density_peaking)
-            * self.temperature_peaking**1.5
-            / (1.0 + exponent)
+            math.sqrt(self.density_peaking) * self.temperature_peaking**1.5 / (1.0 + exponent)
         )
 
     def bremsstrahlung_factor(self) -> float:
@@ -192,8 +190,8 @@ class ProfileShape:
         shape = np.clip(1.0 - rho**2, 0.0, 1.0)
 
         density = shape**self.density_exponent
-        temperature = self.temperature_peaking * mean_temperature_kev * shape**(
-            self.temperature_exponent
+        temperature = (
+            self.temperature_peaking * mean_temperature_kev * shape ** (self.temperature_exponent)
         )
 
         low, high = REACTIVITY_TEMPERATURE_RANGE_KEV

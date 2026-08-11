@@ -49,8 +49,9 @@ cubic metre for ``n_e`` in inverse cubic metre and ``T_e`` in keV.
 """
 
 LARMOR_COEFFICIENT: Final[float] = (
-    ELEMENTARY_CHARGE**4 * JOULE_PER_KEV / (3.0 * math.pi * VACUUM_PERMITTIVITY
-                                            * ELECTRON_MASS**3 * LIGHT_SPEED**3)
+    ELEMENTARY_CHARGE**4
+    * JOULE_PER_KEV
+    / (3.0 * math.pi * VACUUM_PERMITTIVITY * ELECTRON_MASS**3 * LIGHT_SPEED**3)
 )
 """Coefficient of the optically thin cyclotron loss, assembled from constants.
 

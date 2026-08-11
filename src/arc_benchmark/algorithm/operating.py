@@ -216,7 +216,5 @@ def solve_ignition_temperature(
         full_output=True,
     )
     if not result.converged:
-        raise RuntimeError(
-            f"ignition temperature solve did not converge on bracket {bracket_kev}"
-        )
+        raise RuntimeError(f"ignition temperature solve did not converge on bracket {bracket_kev}")
     return float(root)

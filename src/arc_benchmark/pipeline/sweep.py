@@ -76,9 +76,7 @@ def _rebuilt_state(
         # carries. The ratio is one for a flat density, which every sweep in this
         # package uses, and the division is here so that a peaked sweep would
         # hold the fraction the limit is actually written in.
-        line_averaged = base_greenwald_fraction * greenwald_density(
-            current, geometry.minor_radius
-        )
+        line_averaged = base_greenwald_fraction * greenwald_density(current, geometry.minor_radius)
         density = line_averaged / base.profile.line_average_ratio()
     else:
         # Toroidal beta is proportional to n T / B**2, and the temperature is not

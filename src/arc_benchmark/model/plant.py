@@ -56,8 +56,7 @@ class PlantParameters:
             )
         if self.blanket_multiplication < 1.0:
             raise ValueError(
-                "blanket_multiplication must be at least 1, got "
-                f"{self.blanket_multiplication}"
+                f"blanket_multiplication must be at least 1, got {self.blanket_multiplication}"
             )
         if not 0.0 < self.heating_wallplug_efficiency <= 1.0:
             raise ValueError(
@@ -149,9 +148,7 @@ def evaluate_plant(
             raise ValueError(f"{name} must be non-negative, got {value}")
 
     thermal = (
-        parameters.blanket_multiplication * neutron_power_mw
-        + alpha_power_mw
-        + auxiliary_power_mw
+        parameters.blanket_multiplication * neutron_power_mw + alpha_power_mw + auxiliary_power_mw
     )
     gross = parameters.thermal_efficiency * thermal
 

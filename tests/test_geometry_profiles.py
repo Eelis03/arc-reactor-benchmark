@@ -119,9 +119,7 @@ def test_closed_form_factors_match_their_integrals(
     def average(values: np.ndarray) -> float:
         return float(np.trapezoid(2.0 * rho * values, rho))
 
-    assert average(density * temperature) == pytest.approx(
-        shape.stored_energy_factor(), rel=1.0e-6
-    )
+    assert average(density * temperature) == pytest.approx(shape.stored_energy_factor(), rel=1.0e-6)
     assert average(density**2 * np.sqrt(temperature)) == pytest.approx(
         shape.bremsstrahlung_factor(), rel=1.0e-6
     )
@@ -143,9 +141,7 @@ def test_peaking_raises_every_factor_above_one() -> None:
 
 def test_fusion_factor_grows_with_peaking() -> None:
     """More peaked profiles enhance fusion power more, at a fixed mean temperature."""
-    factors = [
-        ProfileShape(0.2 * k, 0.5 * k).fusion_factor(14.0) for k in range(0, 5)
-    ]
+    factors = [ProfileShape(0.2 * k, 0.5 * k).fusion_factor(14.0) for k in range(0, 5)]
     assert all(later > earlier for earlier, later in itertools.pairwise(factors))
 
 
@@ -182,9 +178,7 @@ def test_line_average_ratio_matches_the_chord_integral(density_exponent: float) 
 
     chord_average = float(np.trapezoid(core, rho))
     volume_average = float(np.trapezoid(2.0 * rho * core, rho))
-    assert shape.line_average_ratio() == pytest.approx(
-        chord_average / volume_average, rel=1.0e-5
-    )
+    assert shape.line_average_ratio() == pytest.approx(chord_average / volume_average, rel=1.0e-5)
 
 
 def test_line_average_ratio_hits_its_two_exact_cases() -> None:
@@ -211,9 +205,9 @@ def test_line_average_ratio_rises_with_density_peaking() -> None:
     ratios = [ProfileShape(0.25 * k, 0.5 * k).line_average_ratio() for k in range(0, 5)]
     assert ratios[0] == 1.0
     assert all(later > earlier for earlier, later in itertools.pairwise(ratios))
-    assert ProfileShape(0.4, 0.0).line_average_ratio() == ProfileShape(
-        0.4, 3.0
-    ).line_average_ratio()
+    assert (
+        ProfileShape(0.4, 0.0).line_average_ratio() == ProfileShape(0.4, 3.0).line_average_ratio()
+    )
 
 
 def test_profile_rejects_negative_exponents() -> None:

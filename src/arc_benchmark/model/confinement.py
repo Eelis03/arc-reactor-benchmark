@@ -140,9 +140,7 @@ class PowerLawConfinement:
         """Energy confinement time in second at the given plasma parameters."""
         # float(...) because a float raised to a float power is typed as Any: the
         # general case can produce a complex result, which this one never does.
-        return float(
-            self.tau_e_at_unit_power(inputs) * inputs.loss_power_mw**self.exponents.power
-        )
+        return float(self.tau_e_at_unit_power(inputs) * inputs.loss_power_mw**self.exponents.power)
 
     def tau_e_at_unit_power(self, inputs: ConfinementInputs) -> float:
         """Confinement time in second at a loss power of one megawatt.

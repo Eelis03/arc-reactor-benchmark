@@ -58,9 +58,7 @@ def test_every_example_script_is_discovered() -> None:
 
 
 @pytest.mark.parametrize("name", _SCRIPTS)
-def test_example_runs_and_produces_output(
-    name: str, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_example_runs_and_produces_output(name: str, capsys: pytest.CaptureFixture[str]) -> None:
     """Each script returns zero and prints a substantial amount of text."""
     module = _load(name)
     assert module.main(["--quick"]) == 0

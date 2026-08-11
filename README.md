@@ -3,7 +3,7 @@
 Power balance and confinement benchmarking for ARC-class compact high-field tokamaks with a parametric efficiency study.
 
 [![CI](https://github.com/Eelis03/arc-reactor-benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/Eelis03/arc-reactor-benchmark/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ![Fusion power against toroidal field on three branches, with measured exponents 0, 2 and 4, and a feasible band on each that is bounded below by the Troyon beta limit and above by the L to H power threshold](docs/figures/field_scaling.png)
@@ -157,7 +157,9 @@ recorded in [docs/design-notes.md](docs/design-notes.md).
 
 ## Installation
 
-Requires Python 3.12 or later.
+Requires Python 3.12 or later. Continuous integration runs the whole suite on
+3.12 and 3.13, on Linux and on Windows, so the version floor in `pyproject.toml`
+is a tested claim rather than a declared one.
 
 ```bash
 git clone https://github.com/Eelis03/arc-reactor-benchmark.git
@@ -448,6 +450,7 @@ limitation that has been closed and what closing it cost.
 ```bash
 uv run pytest -q
 uv run ruff check .
+uv run ruff format --check .
 uv run mypy
 uv run pytest --cov=src/arc_benchmark --cov-report=term-missing
 ```

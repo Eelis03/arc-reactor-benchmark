@@ -101,9 +101,7 @@ def implied_confinement_multiplier(
 
     alpha_mw = ALPHA_FRACTION * published.fusion_power_mw
     radiated = (
-        point.terms.radiated_power_mw
-        if point.convention is LossPowerConvention.SEPARATRIX
-        else 0.0
+        point.terms.radiated_power_mw if point.convention is LossPowerConvention.SEPARATRIX else 0.0
     )
     loss_power_mw = alpha_mw + published.auxiliary_power_mw - radiated
     if loss_power_mw <= 0.0:
@@ -242,7 +240,5 @@ def run_benchmark(
     for name in names:
         if name not in MACHINES:
             raise KeyError(f"unknown machine {name!r}; have {sorted(MACHINES)}")
-        results.append(
-            run_benchmark_case(MACHINES[name], scaling, convention, limits, profile)
-        )
+        results.append(run_benchmark_case(MACHINES[name], scaling, convention, limits, profile))
     return BenchmarkTrace(scaling_name=scaling.name, results=tuple(results))

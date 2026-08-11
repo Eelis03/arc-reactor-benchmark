@@ -38,9 +38,7 @@ def _with(**changes: object) -> PlasmaState:
 
 @pytest.mark.parametrize("scaling_name", sorted(CONFINEMENT_SCALINGS))
 @pytest.mark.parametrize("convention", list(LossPowerConvention))
-def test_the_power_balance_closes(
-    scaling_name: str, convention: LossPowerConvention
-) -> None:
+def test_the_power_balance_closes(scaling_name: str, convention: LossPowerConvention) -> None:
     """Sources equal sinks at the solved operating point.
 
     Tolerance: the residual is a difference of terms of order 100 MW, formed from
@@ -53,9 +51,7 @@ def test_the_power_balance_closes(
     """
     point = solve_operating_point(_ARC, CONFINEMENT_SCALINGS[scaling_name], convention)
     radiated = (
-        point.terms.radiated_power_mw
-        if convention is LossPowerConvention.SEPARATRIX
-        else 0.0
+        point.terms.radiated_power_mw if convention is LossPowerConvention.SEPARATRIX else 0.0
     )
     sources = point.terms.alpha_power_mw + point.auxiliary_power_mw
     sinks = radiated + point.transport_power_mw
@@ -114,9 +110,7 @@ def test_a_peaked_density_reaches_the_scaling_as_a_line_average() -> None:
 
     flat_tau = IPB98Y2.tau_e(_ARC.confinement_inputs(100.0))
     peaked_tau = IPB98Y2.tau_e(peaked.confinement_inputs(100.0))
-    assert peaked_tau / flat_tau == pytest.approx(
-        ratio**IPB98Y2.exponents.density, rel=1.0e-13
-    )
+    assert peaked_tau / flat_tau == pytest.approx(ratio**IPB98Y2.exponents.density, rel=1.0e-13)
 
 
 def test_alpha_and_neutron_powers_partition_the_fusion_power() -> None:
@@ -139,9 +133,7 @@ def test_gain_increases_monotonically_with_confinement_time() -> None:
     without exception.
     """
     multipliers = [1.2 + 0.1 * step for step in range(0, 15)]
-    solved = [
-        solve_operating_point(_with(confinement_multiplier=m), IPB98Y2) for m in multipliers
-    ]
+    solved = [solve_operating_point(_with(confinement_multiplier=m), IPB98Y2) for m in multipliers]
     times = [p.confinement_time_s for p in solved]
     gains = [p.fusion_gain for p in solved]
     assert all(b > a for a, b in itertools.pairwise(times))
