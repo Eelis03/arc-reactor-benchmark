@@ -52,8 +52,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     print()
     print("The same three scalings in dimensionless variables, at fixed shape and isotope")
     print(
-        f"  {'scaling':12} {'rho_star':>9} {'beta':>9} {'nu_star':>9} {'q':>9} "
-        f"{'residual R':>11}"
+        f"  {'scaling':12} {'rho_star':>9} {'beta':>9} {'nu_star':>9} {'q':>9} {'residual R':>11}"
     )
     for name, scaling in CONFINEMENT_SCALINGS.items():
         exponents = dimensionless_exponents(scaling)

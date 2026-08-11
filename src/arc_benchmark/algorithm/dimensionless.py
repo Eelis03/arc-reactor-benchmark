@@ -162,9 +162,7 @@ def dimensionless_exponents(scaling: PowerLawConfinement) -> DimensionlessExpone
     beta = 0.5 * (p.temperature + 2.0 * p.density + 0.5 * field_equation)
     normalised_gyroradius = -field_equation - 2.0 * beta
     collisionality = p.density - beta
-    dimensional_residual = (
-        p.major_radius + normalised_gyroradius - collisionality - safety_factor
-    )
+    dimensional_residual = p.major_radius + normalised_gyroradius - collisionality - safety_factor
 
     return DimensionlessExponents(
         scaling_name=scaling.name,
