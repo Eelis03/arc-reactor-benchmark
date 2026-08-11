@@ -130,10 +130,17 @@ def test_efficiency_script_reports_the_recirculating_breakdown(
 def test_scaling_sensitivity_script_reports_the_amplification(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The sensitivity script prints the power degradation and its amplification."""
+    """The sensitivity script prints the power degradation and its amplification.
+
+    It also prints the dimensionless form of each scaling, which is the other
+    statement about the scalings that this script alone produces, so the header
+    of that table is asserted here too.
+    """
     assert _load("scaling_sensitivity.py").main(["--quick"]) == 0
     out = capsys.readouterr().out
     assert "1/(1-alpha_P)" in out
+    assert "rho_star" in out
+    assert "residual R" in out
     for name in ("IPB98(y,2)", "ITER89-P", "Petty08"):
         assert name in out
 
